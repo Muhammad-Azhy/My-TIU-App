@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "MyTIU",
     "name": "MyTIU",
     "slug": "MyTIU",
     "version": "1.0.0",
@@ -24,6 +25,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-video"
+    ]
   }
 }

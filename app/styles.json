@@ -1,0 +1,9 @@
+{    "container":{
+        
+        "alignItems": "center",
+        "justifyContent": "center"
+    },
+    "title":{
+        "color":"red"
+    }
+}

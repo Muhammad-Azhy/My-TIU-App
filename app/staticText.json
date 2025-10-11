@@ -1,0 +1,241 @@
+{
+  "Dashboard": {
+    "Random_Texts": [
+      "....",
+      "Procrastination Level UP",
+      "The syllabus says \"hi\"",
+      "Just get off your phone",
+      "It's not your fault.",
+      "Stay Hydrated..",
+      "Dw the report is writting itself",
+      "Did you skip class today? >:)",
+      "The GPA is just a number..",
+      "One more game",
+      "Attendance isn't real",
+      "Let me Chatgbt this",
+      "Group projects: where one works, four watch",
+      "Dw you can always change the picture.",
+      "Your lecturer can smell your fear",
+      "Music",
+      "Who needs sleep anyway?",
+      "Who's gonna carry the boats!?"
+    ]
+  },
+
+  "departments": [
+    {
+      "id": "8",
+      "name": "ACCOUNTING",
+      "color": "#7C6A8E",
+      "icon": "calculate",
+      "description": "The Accounting department offers programs focused on financial reporting, auditing, and taxation.",
+      "tuition": "$4,500 per semester",
+      "facultyCount": 20,
+      "photos": ["dept1.png", "dept2.png"]
+    },
+    {
+      "id": "3",
+      "name": "ARCHITECTURE",
+      "color": "#7E8F7C",
+      "icon": "architecture",
+      "description": "The Architecture department emphasizes design, urban planning, and sustainable building techniques.",
+      "tuition": "$5,200 per semester",
+      "facultyCount": 18,
+      "photos": [
+        { "uri": "../../../assets/Arch/arch2.jpg" },
+        { "uri": "../../../assets/Arch/arch1.jpg" }
+      ],
+      "videos": [{ "uri": "../../../assets/arch_intro.mp4" }]
+    },
+    {
+      "id": "6",
+      "name": "BANKING & FINANCE",
+      "color": "#5E7D8A",
+      "icon": "account-balance",
+      "description": "Programs covering banking operations, investments, financial analysis, and corporate finance.",
+      "tuition": "$5,000 per semester",
+      "facultyCount": 22,
+      "photos": ["dept5.png", "dept6.png"]
+    },
+    {
+      "id": "18",
+      "name": "BIOLOGY EDUCATION",
+      "color": "#6C8E72",
+      "icon": "biotech",
+      "description": "Focused on biology teaching methods and laboratory skills for future educators.",
+      "tuition": "$4,200 per semester",
+      "facultyCount": 15,
+      "photos": ["dept7.png", "dept8.png"]
+    },
+    {
+      "id": "4",
+      "name": "BUSINESS & MANAGEMENT",
+      "color": "#6C7A99",
+      "icon": "business-center",
+      "description": "Programs in business strategy, management principles, and organizational leadership.",
+      "tuition": "$5,500 per semester",
+      "facultyCount": 25,
+      "photos": ["dept9.png", "dept10.png"]
+    },
+    {
+      "id": "5",
+      "name": "CIVIL",
+      "color": "#9C8F6C",
+      "icon": "engineering",
+      "description": "Civil Engineering department covering infrastructure, construction, and structural design.",
+      "tuition": "$5,000 per semester",
+      "facultyCount": 20,
+      "photos": ["dept11.png", "dept12.png"]
+    },
+    {
+      "id": "7",
+      "name": "COMPUTER",
+      "color": "#4C6A91",
+      "icon": "computer",
+      "description": "Computer Science and IT programs focusing on programming, networks, and software engineering.",
+      "tuition": "$5,200 per semester",
+      "facultyCount": 28,
+      "photos": ["dept13.png", "dept14.png"]
+    },
+    {
+      "id": "20",
+      "name": "CYBER SECURITY",
+      "color": "#4C6A91",
+      "icon": "security",
+      "description": "Specializes in network security, ethical hacking, and information protection techniques.",
+      "tuition": "$5,300 per semester",
+      "facultyCount": 12,
+      "photos": ["dept15.png", "dept16.png"]
+    },
+    {
+      "id": "21",
+      "name": "PHARMACY",
+      "color": "#4C6A91",
+      "icon": "science",
+      "description": "Programs in drug formulation, pharmacology, and pharmaceutical sciences.",
+      "tuition": "$5,400 per semester",
+      "facultyCount": 18,
+      "photos": ["dept17.png", "dept18.png"]
+    },
+    {
+      "id": "1",
+      "name": "DENTISTRY",
+      "color": "#6C8EAD",
+      "icon": "medical-services",
+      "description": "Covers oral health, dental treatments, and preventive dentistry.",
+      "tuition": "$6,000 per semester",
+      "facultyCount": 20,
+      "photos": ["dept19.png", "dept20.png"]
+    },
+    {
+      "id": "12",
+      "name": "ENGLISH LANGUAGE TEACHING (ELT)",
+      "color": "#6C7D8E",
+      "icon": "menu-book",
+      "description": "Focuses on teaching English language skills to learners in diverse settings.",
+      "tuition": "$4,000 per semester",
+      "facultyCount": 15,
+      "photos": ["dept21.png", "dept22.png"]
+    },
+    {
+      "id": "9",
+      "name": "INTERIOR DESIGN",
+      "color": "#8E7A6C",
+      "icon": "palette",
+      "description": "Interior design programs emphasize aesthetics, functionality, and spatial planning.",
+      "tuition": "$4,800 per semester",
+      "facultyCount": 12,
+      "photos": ["dept23.png", "dept24.png"]
+    },
+    {
+      "id": "17",
+      "name": "INFORMATION TECHNOLOGIES (IT)",
+      "color": "#5E7091",
+      "icon": "memory",
+      "description": "Covers computing systems, software, and IT infrastructure management.",
+      "tuition": "$5,200 per semester",
+      "facultyCount": 25,
+      "photos": ["dept25.png", "dept26.png"]
+    },
+    {
+      "id": "10",
+      "name": "INTERNATIONAL RELATIONS & DIPLOMACY",
+      "color": "#6C8E82",
+      "icon": "public",
+      "description": "Focuses on diplomacy, international law, and global political strategies.",
+      "tuition": "$5,000 per semester",
+      "facultyCount": 18,
+      "photos": ["dept27.png", "dept28.png"]
+    },
+    {
+      "id": "2",
+      "name": "LAW",
+      "color": "#8E6C6C",
+      "icon": "gavel",
+      "description": "Programs in civil, criminal, and corporate law with practical training.",
+      "tuition": "$5,500 per semester",
+      "facultyCount": 22,
+      "photos": ["dept29.png", "dept30.png"]
+    },
+    {
+      "id": "19",
+      "name": "MEDICAL ANALYSIS",
+      "color": "#6C7A8E",
+      "icon": "healing",
+      "description": "Focuses on laboratory diagnostics and biomedical analysis.",
+      "tuition": "$4,800 per semester",
+      "facultyCount": 16,
+      "photos": ["dept31.png", "dept32.png"]
+    },
+    {
+      "id": "14",
+      "name": "MATHEMATICS EDUCATION",
+      "color": "#6C8E6C",
+      "icon": "functions",
+      "description": "Prepares students to teach mathematics at various educational levels.",
+      "tuition": "$4,200 per semester",
+      "facultyCount": 15,
+      "photos": ["dept33.png", "dept34.png"]
+    },
+    {
+      "id": "15",
+      "name": "MECHATRONICS",
+      "color": "#7A6C8E",
+      "icon": "precision-manufacturing",
+      "description": "Covers robotics, electronics, and mechanical systems design.",
+      "tuition": "$5,100 per semester",
+      "facultyCount": 18,
+      "photos": ["dept35.png", "dept36.png"]
+    },
+    {
+      "id": "13",
+      "name": "PETROLEUM & MINING",
+      "color": "#7E6C8E",
+      "icon": "whatshot",
+      "description": "Covers petroleum extraction, mining engineering, and geosciences.",
+      "tuition": "$5,500 per semester",
+      "facultyCount": 20,
+      "photos": ["dept37.png", "dept38.png"]
+    },
+    {
+      "id": "16",
+      "name": "PHYSICS EDUCATION",
+      "color": "#8E6C82",
+      "icon": "emoji-objects",
+      "description": "Focuses on physics teaching methods and laboratory experiments.",
+      "tuition": "$4,300 per semester",
+      "facultyCount": 14,
+      "photos": ["dept39.png", "dept40.png"]
+    },
+    {
+      "id": "11",
+      "name": "SURVEYING & GEOMETRICS",
+      "color": "#8C7E6C",
+      "icon": "straighten",
+      "description": "Covers land surveying, mapping, and geometric measurement techniques.",
+      "tuition": "$4,900 per semester",
+      "facultyCount": 12,
+      "photos": ["dept41.png", "dept42.png"]
+    }
+  ]
+}
