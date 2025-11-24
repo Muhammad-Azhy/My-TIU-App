@@ -17,22 +17,24 @@ import {
 import Logo from "../../../assets/TIU.webp";
 import { mS, rS, vS } from "../../Styles/responsive";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { setUserRole } from "../../Redux/Action/User/userAction";
+import { useDispatch, useSelector } from "react-redux";
+import { setRole } from "../../Redux/Slices/User/userSlice";
 
 const Login = ({ onLogin, onSkip }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const dispatch = useDispatch();
+
   const handleLogin = () => {
-    if (!email.includes("@")) {
-      setError("Please enter a valid email");
-      return;
-    }
-    let role = "guest"; // default fallback
-    if (email.endsWith("@tiq")) role = "student"; //@std.tiu.edu.iq
+    let role = "guest";
+    if (email.endsWith("@std.tiu.edu.iq")) role = "student";
     else if (email.endsWith("@tiu.edu.iq")) role = "lecturer";
     else if (email.endsWith("@admin.tiu.edu.iq")) role = "admin";
 
-    onLogin(role);
+    dispatch(setRole(role)); // update Redux
+    // no navigation.replace() needed
   };
 
   return (
@@ -51,7 +53,7 @@ const Login = ({ onLogin, onSkip }) => {
               color: "rgba(238, 238, 238, 1)",
             }}
           >
-            Login
+            TLogin
           </Text>
           <TextInput
             placeholder="example@std.tiu.edu.iq"

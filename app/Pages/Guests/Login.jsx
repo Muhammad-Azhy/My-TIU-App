@@ -13,6 +13,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { useDispatch, useSelector } from "react-redux";
 import { setUserRole } from "../../Redux/Action/User/userAction";
 import { useNavigation } from "@react-navigation/native";
+import { setRole } from "../../Redux/Slices/User/userSlice";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -20,25 +21,20 @@ const Login = () => {
   const [error, setError] = useState("");
   const dispatch = useDispatch();
   const userRole = useSelector((state) => state.user.userRole);
-  const navigation = useNavigation(); // ⬅️ add this
+  const navigation = useNavigation();
 
   const handleLogin = () => {
-    if (!email.includes("@")) {
-      setError("Please enter a valid email");
-      return;
-    }
-
     let role = "guest";
     if (email.endsWith("@std.tiu.edu.iq")) role = "student";
     else if (email.endsWith("@tiu.edu.iq")) role = "lecturer";
     else if (email.endsWith("@admin.tiu.edu.iq")) role = "admin";
 
-    dispatch(setUserRole(role));
+    dispatch(setRole(role)); // update Redux
+    // no navigation.replace() needed
   };
 
   const handleSkip = () => {
-    dispatch(setUserRole("guest"));
-    navigation.replace("GuestTabs");
+    dispatch(setRole("guest"));
   };
 
   return (

@@ -30,5 +30,6 @@ const studentSlice = createSlice({
       });
   },
 });
+
 export const { clearStudentData } = studentSlice.actions;
 export const studentReducer = studentSlice.reducer;

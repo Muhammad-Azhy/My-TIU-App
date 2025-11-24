@@ -122,12 +122,11 @@ function AdminTabs() {
 function GuestStack({ userRole }) {
   return (
     <Stack.Navigator>
-      {/* Login screen with NO header */}
-      <Stack.Screen
+      {/* <Stack.Screen
         name="Login"
         component={Login}
         options={{ headerShown: false }}
-      />
+      /> */}
 
       {/* Guest tabs WITH custom header */}
       <Stack.Screen
@@ -174,23 +173,13 @@ function AuthStack() {
 }
 
 export default function RootNavigator() {
-  const userRole = useSelector((state) => state.user.role);
+  const role = useSelector((state) => state.user.role);
+  console.log("Nav Role:" + role);
 
-  if (!userRole) {
-    return <AuthStack />;
-  }
+  if (!role) return <AuthStack />;
+  if (role === "guest") return <GuestStack userRole={role} />;
+  if (role === "student") return <StudentStack />;
+  if (role === "admin") return <AdminStack />;
 
-  if (userRole === "guest") {
-    return <GuestStack userRole={userRole} />;
-  }
-
-  if (userRole === "student") {
-    return <StudentStack userRole={userRole} />;
-  }
-
-  if (userRole === "admin") {
-    return <AdminStack userRole={userRole} />;
-  }
-
-  return <GuestStack userRole={userRole} />;
+  return <GuestStack />; // fallback
 }

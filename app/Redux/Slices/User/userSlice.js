@@ -1,21 +1,20 @@
 import { createSlice } from "@reduxjs/toolkit";
-import Types from "../../Types.json";
 
 const initialState = {
   data: null,
-  role: "guest",
+  role: null, // start as null so we show login first
 };
 
 const userSlice = createSlice({
   name: "user",
-
   initialState,
   reducers: {
     setRole: (state, action) => {
+      console.log("USER ACTION: " + action.payload);
       state.role = action.payload;
     },
-    clearUser: (state, action) => {
-      state.role = "guest";
+    clearUser: (state) => {
+      state.role = null;
       state.data = null;
     },
   },
