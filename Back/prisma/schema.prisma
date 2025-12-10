@@ -1,0 +1,159 @@
+// Prisma schema for University Management System
+// Improvements applied: security, relations, timestamps, enums, indexes, cascade rules
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+
+datasource db {
+  provider = "mysql"
+}
+/*
+  TODO: 
+    make this a diagram 
+    connect BE to FE
+    
+*/
+// Enums
+enum Role {
+  ADMIN
+  STUDENT
+  TEACHER
+}
+
+enum AcademicYear {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+  FIFTH
+  SIXITH
+  SEVENTH
+}
+
+// ==================== User Table ====================
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String    // bcrypt
+  role          Role
+  isActive      Boolean   @default(true) 
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? 
+
+  studentProfile Student?
+  teacherProfile Teacher?
+}
+
+// ==================== Student Table ====================
+model Student {
+  id           Int     @id
+  user         User    @relation(fields: [id], references: [id])
+  fullName     String
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull) 
+  year         AcademicYear? 
+  // className    String?      
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  enrollments  Enrollment[]
+
+  @@index([departmentId]) // FK index for performance
+}
+
+model Course {
+  id          Int       @id @default(autoincrement())
+  name        String
+  code        String    @unique // ex: "AI101"
+  department  Department @relation(fields: [departmentId], references: [id])
+  departmentId Int
+  year        AcademicYear
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id        Int      @id @default(autoincrement())
+  student   Student  @relation(fields: [studentId], references: [id])
+  studentId Int
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  Int
+  classSection String? // ex: "A" or "B" if courses have sections
+
+  @@unique([studentId, courseId]) // prevent duplicate enrollments
+}
+
+// ==================== Teacher Table ====================
+model Teacher {
+  id           Int     @id
+  user         User    @relation(fields: [id], references: [id])
+  fullName     String
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  position     String? // Optional: can be enum if positions are fixed
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  announcements Announcement[]
+  @@index([departmentId])
+}
+
+// ==================== Department Table ====================
+
+model Department {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  code      String?   @unique // ex: "CS", "MN", "IT"
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Optional: soft delete
+
+  students      Student[]
+  teachers      Teacher[]
+  news          News[]
+  announcements Announcement[]
+  courses Course[]
+}
+
+// ==================== News Table ====================
+model News {
+  id           Int        @id @default(autoincrement())
+  title        String
+  content      String
+  imageUrl     String? //list of image
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime? // Optional: soft delete
+
+  departmentId Int?       // null = global news
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@index([departmentId])
+}
+
+// ==================== Announcement Table ====================
+
+model Announcement {
+  id          Int       @id @default(autoincrement())
+  title       String
+  content     String
+  attachment  String?   // Store path/URL only. Validate in app
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Optional: soft delete
+
+  teacherId   Int
+  teacher     Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  // Optional Department scope
+  departmentId Int?      
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  year         AcademicYear? // Restrict to enum values
+  className    String?       // Optional: class section
+
+  @@index([teacherId, departmentId])
+}
