@@ -17,7 +17,6 @@ import {
 import Logo from "../../../assets/TIU.webp";
 import { mS, rS, vS } from "../../Styles/responsive";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { setUserRole } from "../../Redux/Action/User/userAction";
 import { useDispatch, useSelector } from "react-redux";
 import { setRole } from "../../Redux/Slices/User/userSlice";
 

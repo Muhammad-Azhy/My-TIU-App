@@ -6,9 +6,13 @@ import { rS } from "../../Styles/responsive";
 
 import BigBox from "../../Components/Other/BigBox";
 import SmallBox from "../../Components/Other/SmallBox";
-import course from "../../../assets/courses.png";
+import { darkTheme, lightTheme } from "../../Styles/theme";
+
 const Dashboard = () => {
   const userRole = useSelector((s) => s.user.role);
+  const themeMode = useSelector((s) => s.theme.mode); // get current mode
+
+  const theme = themeMode === "dark" ? darkTheme : lightTheme;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -19,53 +23,50 @@ const Dashboard = () => {
     gpa: "4.0",
     name: "Vergil",
   };
-
   const boxes = [
     {
       title: "Assignments",
       screen: "MoreInfo",
-      color: "#E0A500",
+      color: theme.specialBoxes.assignments,
       icon: "assignment",
       guestAvailable: false,
     },
     {
       title: "Courses",
       screen: "Courses",
-      color: "#3A7BD5",
+      color: theme.specialBoxes.courses,
       icon: "menu-book",
       guestAvailable: false,
     },
     {
       title: "Schedule",
       screen: "MoreInfo",
-      color: "#6BBF59",
+      color: theme.specialBoxes.schedule,
       icon: "schedule",
       guestAvailable: false,
     },
-
     {
       title: "Grades",
       screen: "MoreInfo",
-      color: "#B85050",
+      color: theme.specialBoxes.grades,
       icon: "grading",
       guestAvailable: false,
     },
     {
       title: "Tuition & Fees",
       screen: "MoreInfo",
-      color: "#D9C45A",
+      color: theme.specialBoxes.tuition,
       icon: "payment",
       guestAvailable: false,
     },
     {
       title: "Settings",
-      screen: "MoreInfo",
-      color: "#7A7A7A",
+      screen: "GuestSettings",
+      color: theme.specialBoxes.settings,
       icon: "settings",
       guestAvailable: true,
     },
   ];
-
   const boxAnims = useRef(boxes.map(() => new Animated.Value(50))).current;
 
   useEffect(() => {
@@ -109,7 +110,7 @@ const Dashboard = () => {
 
   return (
     <ScrollView
-      style={styles.scrollContainer}
+      style={[styles.scrollContainer, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.container}
     >
       <BigBox
@@ -118,6 +119,7 @@ const Dashboard = () => {
         randomText={randomText}
         user={dummyUser}
         userRole={userRole}
+        theme={theme}
       />
       {boxes.map((box, i) => (
         <SmallBox
@@ -129,6 +131,7 @@ const Dashboard = () => {
           icon={box.icon}
           guestAvailable={box.guestAvailable}
           userRole={userRole}
+          theme={theme}
         />
       ))}
     </ScrollView>
@@ -140,7 +143,6 @@ export default Dashboard;
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   container: {
     padding: rS(12),

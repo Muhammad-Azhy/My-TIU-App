@@ -15,6 +15,7 @@ import Courses from "../Pages/Students/Courses";
 import Departments from "../Pages/Guests/Departments";
 import { mS } from "../Styles/responsive";
 import DepartmentDetails from "../Pages/Guests/DepartmentDetails";
+import Settings from "../Pages/Common/Settings";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -37,11 +38,12 @@ function DashboardStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="DashboardHome" component={Dashboard} />
-      <Stack.Screen name="MoreInfo" component={MoreInfo} />
+      <Stack.Screen name="GuestSettings" component={Settings} />
       <Stack.Screen name="Courses" component={Courses} />
     </Stack.Navigator>
   );
 }
+
 function DepartmentsStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -122,12 +124,6 @@ function AdminTabs() {
 function GuestStack({ userRole }) {
   return (
     <Stack.Navigator>
-      {/* <Stack.Screen
-        name="Login"
-        component={Login}
-        options={{ headerShown: false }}
-      /> */}
-
       {/* Guest tabs WITH custom header */}
       <Stack.Screen
         name="GuestTabs"
@@ -136,6 +132,11 @@ function GuestStack({ userRole }) {
           header: (props) => <Header {...props} userRole={userRole} />,
         }}
       />
+      {/* <Stack.Screen
+        name="Login"
+        component={TLogin}
+        options={{ headerShown: false }}
+      /> */}
     </Stack.Navigator>
   );
 }

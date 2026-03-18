@@ -2,7 +2,7 @@ import React from "react";
 import { Text, Pressable, StyleSheet, Animated } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { rS, mS, vS } from "../../Styles/responsive";
+import { rS, mS } from "../../Styles/responsive";
 import { useSelector } from "react-redux";
 
 const SmallBox = ({
@@ -12,12 +12,13 @@ const SmallBox = ({
   color,
   icon,
   guestAvailable,
-  userRole,
+  theme,
 }) => {
   const navigation = useNavigation();
-
+  const userRole = useSelector((state) => state.user.role);
   const isLockedForGuest = userRole === "guest" && guestAvailable === false;
-  const displayColor = isLockedForGuest ? "#1a1a1a" : color;
+
+  const displayColor = isLockedForGuest ? "#1a1a1a" : color; // keep special color
 
   return (
     <Animated.View
@@ -29,7 +30,8 @@ const SmallBox = ({
       <Pressable
         style={styles.pressable}
         onPress={() => {
-          if (!isLockedForGuest) navigation.navigate(targetScreen);
+          if (isLockedForGuest) navigation.navigate("Login");
+          else navigation.navigate(targetScreen);
         }}
       >
         <Icon
@@ -38,7 +40,7 @@ const SmallBox = ({
           color="rgba(255,255,255,0.2)"
           style={styles.icon}
         />
-        <Text style={styles.boxText}>
+        <Text style={[styles.boxText, { color: theme.textSec }]}>
           {isLockedForGuest ? "Login to view" : title}
         </Text>
       </Pressable>
@@ -63,13 +65,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  icon: {
-    position: "absolute",
-  },
+  icon: { position: "absolute" },
   boxText: {
     fontSize: mS(16),
     fontWeight: "600",
-    color: "#fff",
     textAlign: "center",
   },
 });
