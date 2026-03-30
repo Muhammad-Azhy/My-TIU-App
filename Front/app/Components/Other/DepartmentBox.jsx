@@ -3,12 +3,17 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { mS, rS } from "../../Styles/responsive";
 import { useNavigation } from "@react-navigation/native";
+import useTheme from "../../Hooks/useTheme";
 
 const DepartmentBox = ({ dept }) => {
   const navigation = useNavigation();
+  const theme = useTheme();
+
+  const bgColor = theme.mode === "dark" ? dept["dark-color"] : dept["light-color"];
+
   return (
     <Pressable
-      style={[styles.card, { backgroundColor: dept.color }]}
+      style={[styles.card, { backgroundColor: bgColor }]}
       onPress={() => navigation.navigate("DepartmentDetails", { dept })}
     >
       <MaterialIcons name={dept.icon} size={mS(32)} color="#fff" />

@@ -11,8 +11,8 @@ import {
 import DepartmentBox from "../../Components/Other/DepartmentBox";
 import { rS } from "../../Styles/responsive";
 import staticTexts from "../../staticText.json";
+import useTheme from "../../Hooks/useTheme";
 
-// Group departments by first letter
 const groupDepartments = (departments) => {
   const groups = {};
   departments.forEach((dept) => {
@@ -27,6 +27,7 @@ const groupDepartments = (departments) => {
 
 export default function Departments() {
   const [search, setSearch] = useState("");
+  const theme = useTheme();
 
   const filteredDepartments = useMemo(() => {
     if (!search) return staticTexts.departments;
@@ -42,15 +43,16 @@ export default function Departments() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: theme.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
         <TextInput
           placeholder="Search Departments..."
+          placeholderTextColor={theme.subText}
           value={search}
           onChangeText={setSearch}
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: theme.background, color: theme.text }]}
           autoCorrect={false}
           autoCapitalize="none"
           clearButtonMode="while-editing"
@@ -62,8 +64,8 @@ export default function Departments() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <DepartmentBox dept={item} />}
         renderSectionHeader={({ section: { title } }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{title}</Text>
+          <View style={[styles.sectionHeader, { backgroundColor: theme.background }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
           </View>
         )}
         contentContainerStyle={styles.container}
