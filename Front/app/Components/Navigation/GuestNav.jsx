@@ -1,47 +1,54 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
+import useTheme from '../../Hooks/useTheme';
 
-const Footer = ({ setCurrentPage,  }) => {
+const Footer = ({ setCurrentPage }) => {
+  const theme = useTheme();
+
   return (
-    <View style={styles.footer}>
+    <View style={[styles.footer, { backgroundColor: theme.secondary, borderColor: theme.border }]}>
       <Pressable
         onPress={() => setCurrentPage('chat')}
         style={({ pressed }) => [
           styles.button,
-          pressed && styles.buttonPressed
+          { backgroundColor: theme.card },
+          pressed && styles.buttonPressed,
         ]}
       >
-        <Text style={styles.buttonText}>News</Text>
+        <Text style={[styles.buttonText, { color: theme.text }]}>News</Text>
       </Pressable>
 
       <Pressable
         onPress={() => setCurrentPage('chat')}
         style={({ pressed }) => [
           styles.button,
-          pressed && styles.buttonPressed
+          { backgroundColor: theme.card },
+          pressed && styles.buttonPressed,
         ]}
       >
-        <Text style={styles.buttonText}>Promo</Text>
+        <Text style={[styles.buttonText, { color: theme.text }]}>Promo</Text>
       </Pressable>
 
       <Pressable
         onPress={() => setCurrentPage('news')}
         style={({ pressed }) => [
           styles.button,
-          pressed && styles.buttonPressed
+          { backgroundColor: theme.card },
+          pressed && styles.buttonPressed,
         ]}
       >
-        <Text style={styles.buttonText}>News</Text>
+        <Text style={[styles.buttonText, { color: theme.text }]}>News</Text>
       </Pressable>
 
       <Pressable
         onPress={() => setCurrentPage('chat')}
         style={({ pressed }) => [
           styles.button,
-          pressed && styles.buttonPressed
+          { backgroundColor: theme.card },
+          pressed && styles.buttonPressed,
         ]}
       >
-        <Text style={styles.buttonText}>Settings</Text>
+        <Text style={[styles.buttonText, { color: theme.text }]}>Settings</Text>
       </Pressable>
     </View>
   );
@@ -66,7 +73,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(232, 207, 163)',
   },
   buttonPressed: {
-    backgroundColor: 'rgb(215, 185, 130)', // slightly darker shade on press
+    backgroundColor: 'rgb(215, 185, 130)',
   },
   buttonText: {
     color: 'rgb(57, 52, 43)',

@@ -25,7 +25,7 @@ const Header = ({ userRole }) => {
       ]}
     >
       <View style={[styles.header, { backgroundColor: theme.secondary }]}>
-        <Text style={[styles.title, { color: theme.text }]}>{userRole}</Text>
+        <Text style={[styles.title, { color: theme.textSec }]}>{userRole}</Text>
         <Image source={Logo} style={styles.image} />
       </View>
     </View>

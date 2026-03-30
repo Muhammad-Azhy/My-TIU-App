@@ -90,12 +90,7 @@ export default function Settings() {
         />
       </View>
 
-      <SettingsItem
-        icon="language"
-        title="Language"
-        onPress={() => {}}
-        theme={theme}
-      />
+     
 
       {/* ABOUT */}
       <Text style={[styles.section, { color: theme.subText }]}>About</Text>

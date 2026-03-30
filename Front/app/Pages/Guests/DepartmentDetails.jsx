@@ -13,13 +13,16 @@ import {
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { rS, mS, vS } from "../../Styles/responsive";
+import useTheme from "../../Hooks/useTheme";
 
 export default function DepartmentDetails({ route }) {
   const { dept } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const theme = useTheme();
 
-  // Dummy photos for now
+  const deptColor = theme.mode === "dark" ? dept["dark-color"] : dept["light-color"];
+
   const dummyPhotos = [
     { uri: "https://picsum.photos/400/300?random=101" },
     { uri: "https://picsum.photos/400/300?random=102" },
@@ -28,42 +31,43 @@ export default function DepartmentDetails({ route }) {
   ];
 
   const imageUrls = dummyPhotos.map((img) => ({ url: img.uri }));
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: dept.color }]}>
+      <View style={[styles.header, { backgroundColor: deptColor }]}>
         <MaterialIcons name={dept.icon} size={mS(50)} color="#fff" />
         <Text style={styles.title}>{dept.name}</Text>
       </View>
 
       <View style={styles.content}>
         {/* About */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>About the Department</Text>
-          <Text style={styles.description}>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>About the Department</Text>
+          <Text style={[styles.description, { color: theme.subText }]}>
             {dept.description || "No description available yet."}
           </Text>
         </View>
 
         {/* Tuition */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Tuition & Fees</Text>
-          <Text style={styles.description}>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Tuition & Fees</Text>
+          <Text style={[styles.description, { color: theme.subText }]}>
             {dept.tuition || "Tuition info coming soon."}
           </Text>
         </View>
 
         {/* Other Info */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Other Info</Text>
-          <Text style={styles.description}>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Other Info</Text>
+          <Text style={[styles.description, { color: theme.subText }]}>
             {dept.otherInfo || "Additional info will be added."}
           </Text>
         </View>
 
         {/* Photo Gallery */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Photo Gallery</Text>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Photo Gallery</Text>
           <FlatList
             data={dummyPhotos}
             keyExtractor={(item, index) => index.toString()}

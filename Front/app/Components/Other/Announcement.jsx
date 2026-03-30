@@ -15,7 +15,7 @@ import { mS, rS, vS } from "../../Styles/responsive";
 import Logo from "../../../assets/placeholder.jpg";
 import ImageViewer from "react-native-image-zoom-viewer";
 
-const Announcment = ({ id, title, images, desc, date }) => {
+const Announcment = ({ id, title, images, desc, date, theme }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -23,9 +23,9 @@ const Announcment = ({ id, title, images, desc, date }) => {
   const desc2 = desc.split(".")[0] + ".";
 
   return (
-    <View style={styles.container}>
-      <View style={styles.AnnouncmentCard}>
-        <Text style={styles.AnnouncmentTitle}>{title}</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.AnnouncmentCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <Text style={[styles.AnnouncmentTitle, { color: theme.text }]}>{title}</Text>
         {images && images.length > 0 && (
           <TouchableOpacity
             onPress={() => {
@@ -42,17 +42,17 @@ const Announcment = ({ id, title, images, desc, date }) => {
             )}
           </TouchableOpacity>
         )}
-        <Text style={styles.AnnouncmentDescription}>
+        <Text style={[styles.AnnouncmentDescription, { color: theme.subText }]}>
           {expanded ? desc : desc2}
         </Text>
 
         <TouchableOpacity onPress={() => setExpanded(!expanded)}>
-          <Text style={styles.moreBtn}>
+          <Text style={[styles.moreBtn, { color: theme.primary }]}>
             {expanded ? "Show Less" : "More Details"}
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.AnnouncmentDate}>{date}</Text>
+        <Text style={[styles.AnnouncmentDate, { color: theme.subText }]}>{date}</Text>
       </View>
       {images && (
         <Modal
@@ -91,6 +91,7 @@ const Announcment = ({ id, title, images, desc, date }) => {
 };
 
 export default React.memo(Announcment);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

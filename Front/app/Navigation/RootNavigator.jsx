@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSelector } from "react-redux";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import useTheme from '../Hooks/useTheme';
 
 import TLogin from "../Pages/Guests/TLogin";
 import Login from "../Pages/Guests/Login";
@@ -20,19 +21,23 @@ import Settings from "../Pages/Common/Settings";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const tabScreenOptions = {
-  headerShown: false,
-  tabBarStyle: {
-    backgroundColor: "#720e3d",
-    height: 60,
-  },
-  tabBarActiveTintColor: "#f2b136",
-  tabBarInactiveTintColor: "#fff",
-  tabBarLabelStyle: {
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-};
+// ✅ Moved into a component so hooks are valid
+function TabScreenOptions() {
+  const theme = useTheme();
+  return {
+    headerShown: false,
+    tabBarStyle: {
+      backgroundColor: theme.secondary,
+      height: 60,
+    },
+    tabBarActiveTintColor: theme.primary,
+    tabBarInactiveTintColor: theme.textSec,
+    tabBarLabelStyle: {
+      fontSize: 14,
+      fontWeight: "bold",
+    },
+  };
+}
 
 function DashboardStack() {
   return (
@@ -54,6 +59,7 @@ function DepartmentsStack() {
 }
 
 function GuestTabs() {
+  const tabScreenOptions = TabScreenOptions(); // ✅ called inside component
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen
@@ -66,7 +72,6 @@ function GuestTabs() {
           tabBarLabel: "Dashboard",
         }}
       />
-
       <Tab.Screen
         name="Departments"
         component={DepartmentsStack}
@@ -77,7 +82,6 @@ function GuestTabs() {
           tabBarLabel: "Departments",
         }}
       />
-
       <Tab.Screen
         name="News"
         component={News}
@@ -88,7 +92,6 @@ function GuestTabs() {
           tabBarLabel: "News",
         }}
       />
-
       <Tab.Screen
         name="Login"
         component={TLogin}
@@ -104,6 +107,7 @@ function GuestTabs() {
 }
 
 function StudentTabs() {
+  const tabScreenOptions = TabScreenOptions(); // ✅
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen name="Chat" component={Chat} />
@@ -113,6 +117,7 @@ function StudentTabs() {
 }
 
 function AdminTabs() {
+  const tabScreenOptions = TabScreenOptions(); // ✅
   return (
     <Tab.Navigator screenOptions={tabScreenOptions}>
       <Tab.Screen name="Chat" component={Chat} />
@@ -124,7 +129,6 @@ function AdminTabs() {
 function GuestStack({ userRole }) {
   return (
     <Stack.Navigator>
-      {/* Guest tabs WITH custom header */}
       <Stack.Screen
         name="GuestTabs"
         component={GuestTabs}
@@ -132,11 +136,6 @@ function GuestStack({ userRole }) {
           header: (props) => <Header {...props} userRole={userRole} />,
         }}
       />
-      {/* <Stack.Screen
-        name="Login"
-        component={TLogin}
-        options={{ headerShown: false }}
-      /> */}
     </Stack.Navigator>
   );
 }
@@ -182,5 +181,5 @@ export default function RootNavigator() {
   if (role === "student") return <StudentStack />;
   if (role === "admin") return <AdminStack />;
 
-  return <GuestStack />; // fallback
+  return <GuestStack />;
 }
