@@ -10,17 +10,14 @@ import {
 import Logo from "../../../assets/TIU.webp";
 import { mS, rS, vS } from "../../Styles/responsive";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigation } from "@react-navigation/native";
-import { setRole } from "../../Redux/Slices/User/userSlice";
+import { useDispatch } from "react-redux";
+import { setRole, setUserData } from "../../Redux/Slices/User/userSlice";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const dispatch = useDispatch();
-  const userRole = useSelector((state) => state.user.userRole);
-  const navigation = useNavigation();
 
   const handleLogin = () => {
     let role = "guest";
@@ -28,11 +25,60 @@ const Login = () => {
     else if (email.endsWith("@tiu.edu.iq")) role = "lecturer";
     else if (email.endsWith("@admin.tiu.edu.iq")) role = "admin";
 
-    dispatch(setRole(role)); // update Redux
-    // no navigation.replace() needed
+    dispatch(setRole(role));
+
+    if (role === "student" && email.trim()) {
+      const local = email.split("@")[0].trim() || "student";
+      const pretty = local
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      dispatch(
+        setUserData({
+          name: pretty,
+          id: `ST-${local.slice(0, 8).toUpperCase()}`,
+          email: email.trim(),
+          department: "Computer Engineering",
+          year: "Third year",
+          grade: "4",
+          semester: "2",
+          gpa: "—",
+        })
+      );
+    } else if (role === "lecturer" && email.trim()) {
+      const local = email.split("@")[0].trim() || "staff";
+      const pretty = local
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      dispatch(
+        setUserData({
+          name: pretty,
+          id: `TCH-${local.slice(0, 8).toUpperCase()}`,
+          email: email.trim(),
+          department: "Computer Engineering",
+          position: "Lecturer",
+        })
+      );
+    } else if (role === "admin" && email.trim()) {
+      const local = email.split("@")[0].trim() || "admin";
+      const pretty = local
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      dispatch(
+        setUserData({
+          name: pretty,
+          id: `ADM-${local.slice(0, 8).toUpperCase()}`,
+          email: email.trim(),
+          department: "Administration",
+          position: "Administrator",
+        })
+      );
+    } else {
+      dispatch(setUserData(null));
+    }
   };
 
   const handleSkip = () => {
+    dispatch(setUserData(null));
     dispatch(setRole("guest"));
   };
 

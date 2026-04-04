@@ -11,8 +11,17 @@ import Logo from "../../../assets/pfp.jpg";
 import { vS } from "../../Styles/responsive";
 import useTheme from "../../Hooks/useTheme"; // your hook
 
-const Header = ({ userRole }) => {
+const ROLE_LABELS = {
+  guest: "Guest",
+  student: "Student",
+  lecturer: "Instructor",
+  admin: "Admin",
+};
+
+const Header = ({ userRole, role }) => {
   const theme = useTheme(); // get current theme colors
+  const raw = userRole ?? role ?? "MyTIU";
+  const label = ROLE_LABELS[raw] ?? raw;
 
   return (
     <View
@@ -25,7 +34,7 @@ const Header = ({ userRole }) => {
       ]}
     >
       <View style={[styles.header, { backgroundColor: theme.secondary }]}>
-        <Text style={[styles.title, { color: theme.textSec }]}>{userRole}</Text>
+        <Text style={[styles.title, { color: theme.textSec }]}>{label}</Text>
         <Image source={Logo} style={styles.image} />
       </View>
     </View>

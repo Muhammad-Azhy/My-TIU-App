@@ -5,39 +5,38 @@ import { darkTheme, lightTheme } from "../../Styles/theme";
 import ListCard from "../../Components/lists/ListCard";
 import { rS, mS } from "../../Styles/responsive";
 
-/** Mock enrolled courses until API is wired */
-const MOCK_COURSES = [
+const MOCK_CLASSES = [
   {
     id: "1",
     code: "CMPE 301",
     name: "Data Structures",
     section: "A",
-    meta: "Spring · Mon/Wed 10:00",
+    meta: "32 students · Mon/Wed 10:00",
   },
   {
     id: "2",
-    code: "CMPE 302",
-    name: "Database Systems",
+    code: "CMPE 410",
+    name: "Software Engineering",
     section: "B",
-    meta: "Spring · Tue 14:00",
+    meta: "28 students · Tue 14:00",
   },
   {
     id: "3",
-    code: "MATH 201",
-    name: "Calculus II",
+    code: "CMPE 220",
+    name: "Programming II",
     section: "A",
-    meta: "Spring · Daily 08:00",
+    meta: "40 students · Daily 09:00",
   },
 ];
 
-export default function Courses() {
+export default function InstructorClasses() {
   const mode = useSelector((s) => s.theme.mode);
   const theme = mode === "dark" ? darkTheme : lightTheme;
-  const data = useMemo(() => MOCK_COURSES, []);
+  const data = useMemo(() => MOCK_CLASSES, []);
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <Text style={[styles.heading, { color: theme.text }]}>My courses</Text>
+      <Text style={[styles.heading, { color: theme.text }]}>My classes</Text>
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}
@@ -48,12 +47,12 @@ export default function Courses() {
             subtitle={item.name}
             meta={item.meta}
             theme={theme}
-            icon="menu-book"
+            icon="school"
           />
         )}
         ListEmptyComponent={
           <Text style={{ color: theme.subText, textAlign: "center" }}>
-            You are not enrolled in any courses yet.
+            No classes assigned yet.
           </Text>
         }
       />
