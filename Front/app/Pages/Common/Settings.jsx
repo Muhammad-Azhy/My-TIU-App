@@ -12,6 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import { rS, mS } from "../../Styles/responsive";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../../Redux/Slices/Theme/themeSlice";
+import { clearUser } from "../../Redux/Slices/User/userSlice";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 
 export default function Settings() {
@@ -23,12 +24,7 @@ export default function Settings() {
   const theme = mode === "dark" ? darkTheme : lightTheme;
 
   const handleLogout = () => {
-    dispatch({ type: "LOGOUT" });
-
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Login" }],
-    });
+    dispatch(clearUser());
   };
 
   return (

@@ -6,17 +6,18 @@ import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import useTheme from '../Hooks/useTheme';
 
 import TLogin from "../Pages/Guests/TLogin";
-import Login from "../Pages/Guests/Login";
-import Chat from "../Pages/Common/Chat";
 import News from "../Pages/Common/News";
+import StudentNavigator from "./StudentNavigator";
+import InstructorNavigator from "./InstructorNavigator";
+import AdminNavigator from "./AdminNavigator";
 import Header from "../Components/Header/Header";
 import Dashboard from "../Pages/Common/Dashboard";
-import MoreInfo from "../Pages/Guests/MoreInfo";
 import Courses from "../Pages/Students/Courses";
 import Departments from "../Pages/Guests/Departments";
 import { mS } from "../Styles/responsive";
 import DepartmentDetails from "../Pages/Guests/DepartmentDetails";
 import Settings from "../Pages/Common/Settings";
+import StudentProfile from "../Pages/Students/StudentProfile";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -44,6 +45,7 @@ function DashboardStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="DashboardHome" component={Dashboard} />
       <Stack.Screen name="GuestSettings" component={Settings} />
+      <Stack.Screen name="Profile" component={StudentProfile} />
       <Stack.Screen name="Courses" component={Courses} />
     </Stack.Navigator>
   );
@@ -106,26 +108,6 @@ function GuestTabs() {
   );
 }
 
-function StudentTabs() {
-  const tabScreenOptions = TabScreenOptions(); // ✅
-  return (
-    <Tab.Navigator screenOptions={tabScreenOptions}>
-      <Tab.Screen name="Chat" component={Chat} />
-      <Tab.Screen name="News" component={News} />
-    </Tab.Navigator>
-  );
-}
-
-function AdminTabs() {
-  const tabScreenOptions = TabScreenOptions(); // ✅
-  return (
-    <Tab.Navigator screenOptions={tabScreenOptions}>
-      <Tab.Screen name="Chat" component={Chat} />
-      <Tab.Screen name="News" component={News} />
-    </Tab.Navigator>
-  );
-}
-
 function GuestStack({ userRole }) {
   return (
     <Stack.Navigator>
@@ -144,10 +126,22 @@ function StudentStack({ userRole }) {
   return (
     <Stack.Navigator
       screenOptions={{
-        header: (props) => <Header {...props} role={userRole} />,
+        header: (props) => <Header {...props} userRole={userRole} />,
       }}
     >
-      <Stack.Screen name="StudentTabs" component={StudentTabs} />
+      <Stack.Screen name="StudentTabs" component={StudentNavigator} />
+    </Stack.Navigator>
+  );
+}
+
+function InstructorStack({ userRole }) {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        header: (props) => <Header {...props} userRole={userRole} />,
+      }}
+    >
+      <Stack.Screen name="InstructorTabs" component={InstructorNavigator} />
     </Stack.Navigator>
   );
 }
@@ -156,30 +150,27 @@ function AdminStack({ userRole }) {
   return (
     <Stack.Navigator
       screenOptions={{
-        header: (props) => <Header {...props} />,
+        header: (props) => <Header {...props} userRole={userRole} />,
       }}
     >
-      <Stack.Screen name="AdminTabs" component={AdminTabs} />
-    </Stack.Navigator>
-  );
-}
-
-function AuthStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="AdminTabs" component={AdminNavigator} />
     </Stack.Navigator>
   );
 }
 
 export default function RootNavigator() {
   const role = useSelector((state) => state.user.role);
-  console.log("Nav Role:" + role);
 
-  if (!role) return <AuthStack />;
-  if (role === "guest") return <GuestStack userRole={role} />;
-  if (role === "student") return <StudentStack />;
-  if (role === "admin") return <AdminStack />;
-
-  return <GuestStack />;
+  return (
+    <>
+      {role === "guest" && <GuestStack userRole={role} />}
+      {role === "student" && <StudentStack userRole={role} />}
+      {role === "lecturer" && <InstructorStack userRole={role} />}
+      {role === "admin" && <AdminStack userRole={role} />}
+      {role !== "guest" &&
+        role !== "student" &&
+        role !== "lecturer" &&
+        role !== "admin" && <GuestStack userRole={role} />}
+    </>
+  );
 }

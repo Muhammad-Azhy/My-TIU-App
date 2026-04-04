@@ -6,6 +6,7 @@ import { mS, rS, vS } from "../../Styles/responsive";
 
 const BigBox = ({ fadeAnim, scale, randomText, userRole, user, theme }) => {
   const isGuest = userRole === "guest";
+  const isInstructor = userRole === "lecturer";
   return (
     <Animated.View
       style={[
@@ -34,17 +35,30 @@ const BigBox = ({ fadeAnim, scale, randomText, userRole, user, theme }) => {
         {isGuest ? "Hello, Guest" : `Hello, ${user.name}`}
       </Text>
       <Text style={[styles.profileId, { color: theme.textSec }]}>
-        ID: {isGuest ? "--" : user.id}
+        {isInstructor ? "Staff ID" : "ID"}: {isGuest ? "--" : user.id}
       </Text>
-      <Text style={[styles.profileGrade, { color: theme.textSec }]}>
-        Grade: {isGuest ? "--" : user.grade}
-      </Text>
-      <Text style={[styles.profileSem, { color: theme.textSec }]}>
-        Semester: {isGuest ? "--" : user.semester}
-      </Text>
-      <Text style={[styles.profileGPA, { color: theme.textSec }]}>
-        GPA: {isGuest ? "--" : user.gpa}
-      </Text>
+      {isInstructor ? (
+        <>
+          <Text style={[styles.profileGrade, { color: theme.textSec }]}>
+            Department: {isGuest ? "--" : user.department ?? "—"}
+          </Text>
+          <Text style={[styles.profileSem, { color: theme.textSec }]}>
+            Position: {isGuest ? "--" : user.position ?? "—"}
+          </Text>
+        </>
+      ) : (
+        <>
+          <Text style={[styles.profileGrade, { color: theme.textSec }]}>
+            Grade: {isGuest ? "--" : user.grade}
+          </Text>
+          <Text style={[styles.profileSem, { color: theme.textSec }]}>
+            Semester: {isGuest ? "--" : user.semester}
+          </Text>
+          <Text style={[styles.profileGPA, { color: theme.textSec }]}>
+            GPA: {isGuest ? "--" : user.gpa}
+          </Text>
+        </>
+      )}
     </Animated.View>
   );
 };
