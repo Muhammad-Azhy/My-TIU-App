@@ -1,38 +1,42 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, Text } from "react-native";
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import ListCard from "../../Components/lists/ListCard";
 import { rS, mS } from "../../Styles/responsive";
-
-const MOCK_CLASSES = [
-  {
-    id: "1",
-    code: "CMPE 301",
-    name: "Data Structures",
-    section: "A",
-    meta: "32 students · Mon/Wed 10:00",
-  },
-  {
-    id: "2",
-    code: "CMPE 410",
-    name: "Software Engineering",
-    section: "B",
-    meta: "28 students · Tue 14:00",
-  },
-  {
-    id: "3",
-    code: "CMPE 220",
-    name: "Programming II",
-    section: "A",
-    meta: "40 students · Daily 09:00",
-  },
-];
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { lecturerApi } from "../../services/api";
 
 export default function InstructorClasses() {
+  useScreenPerformance("Instructor Classes Screen");
+
   const mode = useSelector((s) => s.theme.mode);
   const theme = mode === "dark" ? darkTheme : lightTheme;
-  const data = useMemo(() => MOCK_CLASSES, []);
+  const [classes, setClasses] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const response = await lecturerApi.classes();
+        setClasses(response.data || []);
+      } catch (_error) {
+        setClasses([]);
+      }
+    };
+    load();
+  }, []);
+
+  const data = useMemo(
+    () =>
+      classes.map((item) => ({
+        id: String(item.id),
+        code: item.course?.code || "N/A",
+        name: item.course?.title || "Unknown course",
+        section: item.section || "-",
+        meta: `${item.enrollments?.length || 0} students · ${item.schedule || "TBA"}`,
+      })),
+    [classes],
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>

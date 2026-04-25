@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,31 +7,53 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { darkTheme, lightTheme } from "../../Styles/theme";
-import { removeManagedNews } from "../../Redux/Slices/Admin/adminSlice";
 import ListCard from "../../Components/lists/ListCard";
 import { rS, mS } from "../../Styles/responsive";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { guestApi, adminApi } from "../../services/api";
 
 export default function AdminNewsList({ navigation }) {
+  useScreenPerformance("Admin News List Screen");
+
   const mode = useSelector((s) => s.theme.mode);
-  const items = useSelector((s) => s.admin.managedNews);
-  const dispatch = useDispatch();
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState("");
   const theme = mode === "dark" ? darkTheme : lightTheme;
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const response = await guestApi.news();
+        setItems(response.data || []);
+      } catch (apiError) {
+        setError(apiError?.response?.data?.message || "Failed to load news.");
+      }
+    };
+    load();
+  }, []);
 
   const confirmDelete = (id, title) => {
     Alert.alert(
       "Remove news?",
-      `"${title}" will be removed from this demo list.`,
+      `"${title}" will be removed.`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Remove",
           style: "destructive",
-          onPress: () => dispatch(removeManagedNews(id)),
+          onPress: async () => {
+            try {
+              await adminApi.deleteNews(id);
+              setItems((current) => current.filter((item) => item.id !== id));
+            } catch (apiError) {
+              Alert.alert("Delete failed", apiError?.response?.data?.message || "Unable to delete this item.");
+            }
+          },
         },
-      ]
+      ],
     );
   };
 
@@ -48,20 +70,21 @@ export default function AdminNewsList({ navigation }) {
         </TouchableOpacity>
       </View>
       <Text style={[styles.hint, { color: theme.subText }]}>
-        Tap a row to edit. Changes stay in this app session (Redux demo).
+        Tap a row to edit.
       </Text>
+      {error ? <Text style={{ color: "#d14343", paddingHorizontal: rS(16), marginBottom: rS(8) }}>{error}</Text> : null}
 
       <FlatList
         data={items}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <View>
             <ListCard
               title={item.title}
               subtitle={item.content}
-              meta={`${item.departmentLabel} · ${new Date(
-                item.updatedAt
+              meta={`${item.department?.name || "Global"} · ${new Date(
+                item.updatedAt,
               ).toLocaleDateString()}`}
               theme={theme}
               onPress={() =>

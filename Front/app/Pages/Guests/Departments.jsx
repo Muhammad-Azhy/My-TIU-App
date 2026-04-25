@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   SectionList,
   View,
@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import DepartmentBox from "../../Components/Other/DepartmentBox";
 import { rS } from "../../Styles/responsive";
-import staticTexts from "../../staticText.json";
 import useTheme from "../../Hooks/useTheme";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { guestApi } from "../../services/api";
 
 const groupDepartments = (departments) => {
   const groups = {};
@@ -26,19 +27,42 @@ const groupDepartments = (departments) => {
 };
 
 export default function Departments() {
+  useScreenPerformance("Departments Screen");
   const [search, setSearch] = useState("");
+  const [departments, setDepartments] = useState([]);
   const theme = useTheme();
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const response = await guestApi.departments();
+        const mapped = (response.data || []).map((dept) => ({
+          id: String(dept.id),
+          name: dept.name,
+          code: dept.code,
+          icon: "apartment",
+          "light-color": "#7c5cff",
+          "dark-color": "#4f3cae",
+        }));
+        setDepartments(mapped);
+      } catch (apiError) {
+        setError(apiError?.response?.data?.message || "Failed to load departments.");
+      }
+    };
+    load();
+  }, []);
 
   const filteredDepartments = useMemo(() => {
-    if (!search) return staticTexts.departments;
-    return staticTexts.departments.filter((dept) =>
-      dept.name.toLowerCase().includes(search.toLowerCase())
+    if (!search) return departments;
+    return departments.filter((dept) =>
+      dept.name.toLowerCase().includes(search.toLowerCase()),
     );
-  }, [search]);
+  }, [search, departments]);
 
   const sections = useMemo(
     () => groupDepartments(filteredDepartments),
-    [filteredDepartments]
+    [filteredDepartments],
   );
 
   return (
@@ -52,7 +76,10 @@ export default function Departments() {
           placeholderTextColor={theme.subText}
           value={search}
           onChangeText={setSearch}
-          style={[styles.searchInput, { backgroundColor: theme.background, color: theme.text }]}
+          style={[
+            styles.searchInput,
+            { backgroundColor: theme.background, color: theme.text },
+          ]}
           autoCorrect={false}
           autoCapitalize="none"
           clearButtonMode="while-editing"
@@ -64,12 +91,24 @@ export default function Departments() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <DepartmentBox dept={item} />}
         renderSectionHeader={({ section: { title } }) => (
-          <View style={[styles.sectionHeader, { backgroundColor: theme.background }]}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
+          <View
+            style={[
+              styles.sectionHeader,
+              { backgroundColor: theme.background },
+            ]}
+          >
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {title}
+            </Text>
           </View>
         )}
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          <Text style={{ color: theme.subText, textAlign: "center" }}>
+            {error || "No departments found."}
+          </Text>
+        }
       />
     </KeyboardAvoidingView>
   );

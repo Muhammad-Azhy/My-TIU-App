@@ -12,6 +12,8 @@ import StudentHome from "../Pages/Students/StudentHome";
 import StudentAnnouncements from "../Pages/Students/StudentAnnouncements";
 import StudentAnnouncementDetail from "../Pages/Students/StudentAnnouncementDetail";
 import StudentProfile from "../Pages/Students/StudentProfile";
+import StudentAssignments from "../Pages/Students/StudentAssignments";
+import StudentGrades from "../Pages/Students/StudentGrades";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -53,6 +55,8 @@ function StudentCoursesStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="StudentCoursesList" component={Courses} />
+      <Stack.Screen name="StudentAssignments" component={StudentAssignments} />
+      <Stack.Screen name="StudentGrades" component={StudentGrades} />
     </Stack.Navigator>
   );
 }

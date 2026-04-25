@@ -1,65 +1,53 @@
-import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TextInput,
-} from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, FlatList, StyleSheet, TextInput } from "react-native";
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import ListCard from "../../Components/lists/ListCard";
 import { rS, mS } from "../../Styles/responsive";
-
-const MOCK_USERS = [
-  {
-    id: "u1",
-    name: "Sara Ahmed",
-    email: "sara.a@std.tiu.edu.iq",
-    role: "Student",
-  },
-  {
-    id: "u2",
-    name: "Dr. Karim Hassan",
-    email: "k.hassan@tiu.edu.iq",
-    role: "Instructor",
-  },
-  {
-    id: "u3",
-    name: "Office Registrar",
-    email: "registrar@admin.tiu.edu.iq",
-    role: "Admin",
-  },
-  {
-    id: "u4",
-    name: "Omar Ali",
-    email: "omar.ali@std.tiu.edu.iq",
-    role: "Student",
-  },
-];
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { adminApi } from "../../services/api";
 
 export default function AdminUsersList({ navigation }) {
+  useScreenPerformance("Admin Users List Screen");
+
   const mode = useSelector((s) => s.theme.mode);
   const theme = mode === "dark" ? darkTheme : lightTheme;
   const [query, setQuery] = useState("");
+  const [users, setUsers] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const response = await adminApi.users();
+        setUsers(response.data || []);
+      } catch (apiError) {
+        setError(apiError?.response?.data?.message || "Failed to load users.");
+      }
+    };
+    loadUsers();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return MOCK_USERS;
-    return MOCK_USERS.filter(
+    if (!q) return users;
+    return users.filter(
       (u) =>
-        u.name.toLowerCase().includes(q) ||
+        `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q)
+        u.role.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, users]);
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <Text style={[styles.heading, { color: theme.text }]}>User directory</Text>
-      <Text style={[styles.hint, { color: theme.subText }]}>
-        Read-only demo list. Full search and edits will use the API later.
+      <Text style={[styles.heading, { color: theme.text }]}>
+        User directory
       </Text>
+      <Text style={[styles.hint, { color: theme.subText }]}>
+        Users from the live backend.
+      </Text>
+      {error ? <Text style={{ color: "#d14343", paddingHorizontal: rS(16), marginBottom: rS(8) }}>{error}</Text> : null}
       <TextInput
         value={query}
         onChangeText={setQuery}
@@ -80,9 +68,9 @@ export default function AdminUsersList({ navigation }) {
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <ListCard
-            title={item.name}
+            title={`${item.firstName} ${item.lastName}`}
             subtitle={item.email}
-            meta={item.role}
+            meta={item.role.toLowerCase()}
             theme={theme}
             onPress={() =>
               navigation.navigate("AdminUserDetail", { user: item })

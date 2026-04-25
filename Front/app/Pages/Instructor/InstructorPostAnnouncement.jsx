@@ -9,37 +9,65 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import * as DocumentPicker from "expo-document-picker";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS, vS } from "../../Styles/responsive";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { lecturerApi } from "../../services/api";
 
 export default function InstructorPostAnnouncement({ navigation }) {
+  useScreenPerformance("Instructor Post Announcement Screen");
   const mode = useSelector((s) => s.theme.mode);
   const theme = mode === "dark" ? darkTheme : lightTheme;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [attachmentNote, setAttachmentNote] = useState("");
+  const [pickedFile, setPickedFile] = useState(null);
 
-  const submit = () => {
+  const pickFile = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/*",
+      ],
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (!result.canceled && result.assets?.length) {
+      setPickedFile(result.assets[0]);
+    }
+  };
+
+  const submit = async () => {
     if (!title.trim() || !content.trim()) {
       Alert.alert("Missing fields", "Please enter a title and message body.");
       return;
     }
-    Alert.alert(
-      "Sent (demo)",
-      "Announcement would be published when the API is connected.",
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            setTitle("");
-            setContent("");
-            setAttachmentNote("");
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+    try {
+      const formData = new FormData();
+      formData.append("title", title.trim());
+      formData.append("content", content.trim());
+      if (pickedFile) {
+        formData.append("file", {
+          uri: pickedFile.uri,
+          name: pickedFile.name || `announcement-${Date.now()}.pdf`,
+          type: pickedFile.mimeType || "application/octet-stream",
+        });
+      }
+      await lecturerApi.createAnnouncement(formData);
+      Alert.alert("Success", "Announcement published.");
+      setTitle("");
+      setContent("");
+      setPickedFile(null);
+      navigation.goBack();
+    } catch (apiError) {
+      Alert.alert(
+        "Failed",
+        apiError?.response?.data?.message || "Could not publish announcement.",
+      );
+    }
   };
 
   return (
@@ -53,8 +81,7 @@ export default function InstructorPostAnnouncement({ navigation }) {
         New announcement
       </Text>
       <Text style={[styles.hint, { color: theme.subText }]}>
-        Students in your department/year filters will see this once the backend
-        is wired.
+        Publish announcements for your students.
       </Text>
 
       <Text style={[styles.label, { color: theme.subText }]}>Title</Text>
@@ -65,7 +92,11 @@ export default function InstructorPostAnnouncement({ navigation }) {
         placeholderTextColor={theme.subText}
         style={[
           styles.input,
-          { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
+          {
+            color: theme.text,
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+          },
         ]}
       />
 
@@ -79,30 +110,38 @@ export default function InstructorPostAnnouncement({ navigation }) {
         textAlignVertical="top"
         style={[
           styles.inputArea,
-          { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
+          {
+            color: theme.text,
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+          },
         ]}
       />
 
       <Text style={[styles.label, { color: theme.subText }]}>
         Attachment (optional)
       </Text>
-      <TextInput
-        value={attachmentNote}
-        onChangeText={setAttachmentNote}
-        placeholder="e.g. Link or file name — upload UI later"
-        placeholderTextColor={theme.subText}
+      <TouchableOpacity
+        onPress={pickFile}
         style={[
           styles.input,
-          { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+          },
         ]}
-      />
+      >
+        <Text style={{ color: theme.text }}>
+          {pickedFile ? `Selected: ${pickedFile.name}` : "Select file"}
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.button, { backgroundColor: theme.primary }]}
         onPress={submit}
         activeOpacity={0.85}
       >
-        <Text style={styles.buttonText}>Publish (demo)</Text>
+        <Text style={styles.buttonText}>Publish</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
   );

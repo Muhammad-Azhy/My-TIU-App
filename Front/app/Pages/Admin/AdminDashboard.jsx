@@ -1,17 +1,12 @@
-import React from "react";
-import {
-  ScrollView,
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { ScrollView, View, Text, StyleSheet, Pressable } from "react-native";
 import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS } from "../../Styles/responsive";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
 
-const MOCK_USER_COUNT = 1284;
+import { adminApi } from "../../services/api";
 
 function StatBox({ label, value, theme }) {
   return (
@@ -40,9 +35,31 @@ function QuickTile({ title, color, icon, onPress, theme }) {
 }
 
 export default function AdminDashboard({ navigation }) {
+  useScreenPerformance("Admin Dashboard Screen");
+
   const mode = useSelector((s) => s.theme.mode);
-  const newsCount = useSelector((s) => s.admin.managedNews.length);
   const theme = mode === "dark" ? darkTheme : lightTheme;
+  const [stats, setStats] = useState({
+    users: 0,
+    departments: 0,
+    news: 0,
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const response = await adminApi.dashboardStats();
+        setStats({
+          users: response.data.users || 0,
+          departments: response.data.departments || 0,
+          news: response.data.news || 0,
+        });
+      } catch (_error) {
+        setStats({ users: 0, departments: 0, news: 0 });
+      }
+    };
+    loadStats();
+  }, []);
 
   const goTab = (tabName, params) => {
     navigation.getParent()?.navigate(tabName, params);
@@ -55,17 +72,17 @@ export default function AdminDashboard({ navigation }) {
     >
       <Text style={[styles.heading, { color: theme.text }]}>Admin</Text>
       <Text style={[styles.sub, { color: theme.subText }]}>
-        Overview and quick actions (demo data until APIs are connected).
+        Overview and quick actions for live management flows.
       </Text>
 
       <View style={styles.statsRow}>
-        <StatBox label="News items" value={String(newsCount)} theme={theme} />
+        <StatBox label="News items" value={String(stats.news)} theme={theme} />
         <StatBox
-          label="Users (demo)"
-          value={String(MOCK_USER_COUNT)}
+          label="Users"
+          value={String(stats.users)}
           theme={theme}
         />
-        <StatBox label="Depts." value="21" theme={theme} />
+        <StatBox label="Depts." value={String(stats.departments)} theme={theme} />
       </View>
 
       <Text style={[styles.section, { color: theme.subText }]}>Actions</Text>
@@ -75,9 +92,7 @@ export default function AdminDashboard({ navigation }) {
           color={theme.specialBoxes.courses}
           icon="article"
           theme={theme}
-          onPress={() =>
-            goTab("AdminNewsTab", { screen: "AdminNewsList" })
-          }
+          onPress={() => goTab("AdminNewsTab", { screen: "AdminNewsList" })}
         />
         <QuickTile
           title="User directory"
@@ -89,6 +104,13 @@ export default function AdminDashboard({ navigation }) {
       </View>
       <View style={styles.row}>
         <QuickTile
+          title="Assign enrollment"
+          color={theme.specialBoxes.assignments}
+          icon="how-to-reg"
+          theme={theme}
+          onPress={() => navigation.navigate("AdminAssignEnrollment")}
+        />
+        <QuickTile
           title="Settings"
           color={theme.specialBoxes.settings}
           icon="settings"
@@ -97,7 +119,6 @@ export default function AdminDashboard({ navigation }) {
             goTab("AdminSettingsTab", { screen: "AdminSettingsMain" })
           }
         />
-        <View style={styles.tileSpacer} />
       </View>
     </ScrollView>
   );

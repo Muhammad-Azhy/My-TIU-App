@@ -12,6 +12,8 @@ import StudentProfile from "../Pages/Students/StudentProfile";
 import InstructorHome from "../Pages/Instructor/InstructorHome";
 import InstructorClasses from "../Pages/Instructor/InstructorClasses";
 import InstructorPostAnnouncement from "../Pages/Instructor/InstructorPostAnnouncement";
+import InstructorAssignments from "../Pages/Instructor/InstructorAssignments";
+import InstructorGradeStudents from "../Pages/Instructor/InstructorGradeStudents";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -40,6 +42,14 @@ function InstructorHomeStack() {
       <Stack.Screen
         name="InstructorPostAnnouncement"
         component={InstructorPostAnnouncement}
+      />
+      <Stack.Screen
+        name="InstructorAssignments"
+        component={InstructorAssignments}
+      />
+      <Stack.Screen
+        name="InstructorGradeStudents"
+        component={InstructorGradeStudents}
       />
       <Stack.Screen name="InstructorMessages" component={Chat} />
     </Stack.Navigator>

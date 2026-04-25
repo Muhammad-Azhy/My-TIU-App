@@ -13,6 +13,7 @@ import staticTexts from "../../staticText.json";
 import { rS, mS } from "../../Styles/responsive";
 import BigBox from "../../Components/Other/BigBox";
 import { darkTheme, lightTheme } from "../../Styles/theme";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
 
 function QuickTile({ title, color, icon, onPress, theme }) {
   return (
@@ -32,6 +33,8 @@ function QuickTile({ title, color, icon, onPress, theme }) {
 }
 
 export default function InstructorHome({ navigation }) {
+  useScreenPerformance("Instructor Home Screen");
+
   const themeMode = useSelector((s) => s.theme.mode);
   const profile = useSelector((s) => s.user.data);
   const theme = themeMode === "dark" ? darkTheme : lightTheme;
@@ -109,6 +112,22 @@ export default function InstructorHome({ navigation }) {
           icon="campaign"
           theme={theme}
           onPress={() => navigation.navigate("InstructorPostAnnouncement")}
+        />
+      </View>
+      <View style={styles.row}>
+        <QuickTile
+          title="Assignments"
+          color={theme.specialBoxes.assignments}
+          icon="assignment"
+          theme={theme}
+          onPress={() => navigation.navigate("InstructorAssignments")}
+        />
+        <QuickTile
+          title="Grade students"
+          color={theme.specialBoxes.grades}
+          icon="grading"
+          theme={theme}
+          onPress={() => navigation.navigate("InstructorGradeStudents")}
         />
       </View>
       <View style={styles.row}>

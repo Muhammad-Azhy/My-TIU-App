@@ -11,75 +11,111 @@ import Logo from "../../../assets/TIU.webp";
 import { mS, rS, vS } from "../../Styles/responsive";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useDispatch } from "react-redux";
-import { setRole, setUserData } from "../../Redux/Slices/User/userSlice";
+import {
+  setAuthError,
+  setAuthLoading,
+  setUser,
+} from "../../Redux/Slices/User/userSlice";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { authApi, setApiToken } from "../../services/api";
+import { clearAuth, saveAuth } from "../../services/authStorage";
 
 const Login = () => {
+  useScreenPerformance("Login Screen");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const dispatch = useDispatch();
 
-  const handleLogin = () => {
-    let role = "guest";
-    if (email.endsWith("@std.tiu.edu.iq")) role = "student";
-    else if (email.endsWith("@tiu.edu.iq")) role = "lecturer";
-    else if (email.endsWith("@admin.tiu.edu.iq")) role = "admin";
+  const handleLogin = async () => {
+    console.log("[LOGIN] submit", {
+      hasEmail: Boolean(email.trim()),
+      hasPassword: Boolean(password.trim()),
+    });
+    // #region agent log
+    fetch("http://127.0.0.1:7577/ingest/8ac24eb4-5f94-4dbf-a6b4-b2fa5097aca3", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "f8db7c",
+      },
+      body: JSON.stringify({
+        sessionId: "f8db7c",
+        runId: "initial",
+        hypothesisId: "H5",
+        location: "Pages/Guests/Login.jsx:handleLogin-start",
+        message: "Login submit invoked",
+        data: {
+          hasEmail: Boolean(email.trim()),
+          hasPassword: Boolean(password.trim()),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    if (!email.trim() || !password.trim()) {
+      setError("Email and password are required.");
+      return;
+    }
 
-    dispatch(setRole(role));
-
-    if (role === "student" && email.trim()) {
-      const local = email.split("@")[0].trim() || "student";
-      const pretty = local
-        .replace(/[._-]+/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-      dispatch(
-        setUserData({
-          name: pretty,
-          id: `ST-${local.slice(0, 8).toUpperCase()}`,
-          email: email.trim(),
-          department: "Computer Engineering",
-          year: "Third year",
-          grade: "4",
-          semester: "2",
-          gpa: "—",
-        })
-      );
-    } else if (role === "lecturer" && email.trim()) {
-      const local = email.split("@")[0].trim() || "staff";
-      const pretty = local
-        .replace(/[._-]+/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-      dispatch(
-        setUserData({
-          name: pretty,
-          id: `TCH-${local.slice(0, 8).toUpperCase()}`,
-          email: email.trim(),
-          department: "Computer Engineering",
-          position: "Lecturer",
-        })
-      );
-    } else if (role === "admin" && email.trim()) {
-      const local = email.split("@")[0].trim() || "admin";
-      const pretty = local
-        .replace(/[._-]+/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-      dispatch(
-        setUserData({
-          name: pretty,
-          id: `ADM-${local.slice(0, 8).toUpperCase()}`,
-          email: email.trim(),
-          department: "Administration",
-          position: "Administrator",
-        })
-      );
-    } else {
-      dispatch(setUserData(null));
+    setError("");
+    dispatch(setAuthError(null));
+    dispatch(setAuthLoading(true));
+    try {
+      const response = await authApi.login({
+        email: email.trim(),
+        password,
+      });
+      console.log("[LOGIN] success", {
+        status: response.status,
+        role: response?.data?.user?.role,
+      });
+      const { token, user } = response.data;
+      setApiToken(token);
+      await saveAuth({ token, user });
+      dispatch(setUser({ token, user }));
+    } catch (apiError) {
+      console.error("[LOGIN] failed", {
+        status: apiError?.response?.status || null,
+        message: apiError?.message || "unknown",
+      });
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7577/ingest/8ac24eb4-5f94-4dbf-a6b4-b2fa5097aca3",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Debug-Session-Id": "f8db7c",
+          },
+          body: JSON.stringify({
+            sessionId: "f8db7c",
+            runId: "initial",
+            hypothesisId: "H2-H3-H4",
+            location: "Pages/Guests/Login.jsx:handleLogin-catch",
+            message: "Login failed in UI catch",
+            data: {
+              status: apiError?.response?.status || null,
+              message: apiError?.message || "unknown",
+            },
+            timestamp: Date.now(),
+          }),
+        },
+      ).catch(() => {});
+      // #endregion
+      const message =
+        apiError?.response?.data?.message || "Login failed. Try again.";
+      setError(message);
+      dispatch(setAuthError(message));
+    } finally {
+      dispatch(setAuthLoading(false));
     }
   };
 
-  const handleSkip = () => {
-    dispatch(setUserData(null));
-    dispatch(setRole("guest"));
+  const handleSkip = async () => {
+    await clearAuth();
+    setApiToken(null);
+    dispatch(setUser({ token: null, user: { role: "GUEST" } }));
   };
 
   return (

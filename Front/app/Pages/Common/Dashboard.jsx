@@ -7,21 +7,27 @@ import { rS } from "../../Styles/responsive";
 import BigBox from "../../Components/Other/BigBox";
 import SmallBox from "../../Components/Other/SmallBox";
 import { darkTheme, lightTheme } from "../../Styles/theme";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
 
 const Dashboard = () => {
+  useScreenPerformance("Dashboard Screen");
   const userRole = useSelector((s) => s.user.role);
+  const userData = useSelector((s) => s.user.data);
   const themeMode = useSelector((s) => s.theme.mode); // get current mode
 
   const theme = themeMode === "dark" ? darkTheme : lightTheme;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
-  const dummyUser = {
-    id: "69696969",
-    grade: "4",
-    semester: "2",
-    gpa: "4.0",
-    name: "Vergil",
+  const dashboardUser = {
+    id: String(userData?.id || userData?.student?.id || "--"),
+    grade: userData?.student?.yearLevel ? String(userData.student.yearLevel) : "--",
+    semester: "--",
+    gpa: "--",
+    name:
+      userData?.name ||
+      `${userData?.firstName || ""} ${userData?.lastName || ""}`.trim() ||
+      "User",
   };
   const boxes = [
     {
@@ -117,7 +123,7 @@ const Dashboard = () => {
         fadeAnim={fadeAnim}
         scale={scale}
         randomText={randomText}
-        user={dummyUser}
+        user={dashboardUser}
         userRole={userRole}
         theme={theme}
       />

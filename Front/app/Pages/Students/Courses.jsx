@@ -1,39 +1,45 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, FlatList, StyleSheet, Text } from "react-native";
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import ListCard from "../../Components/lists/ListCard";
 import { rS, mS } from "../../Styles/responsive";
-
-/** Mock enrolled courses until API is wired */
-const MOCK_COURSES = [
-  {
-    id: "1",
-    code: "CMPE 301",
-    name: "Data Structures",
-    section: "A",
-    meta: "Spring · Mon/Wed 10:00",
-  },
-  {
-    id: "2",
-    code: "CMPE 302",
-    name: "Database Systems",
-    section: "B",
-    meta: "Spring · Tue 14:00",
-  },
-  {
-    id: "3",
-    code: "MATH 201",
-    name: "Calculus II",
-    section: "A",
-    meta: "Spring · Daily 08:00",
-  },
-];
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { studentApi } from "../../services/api";
 
 export default function Courses() {
+  useScreenPerformance("Courses Screen");
+
   const mode = useSelector((s) => s.theme.mode);
   const theme = mode === "dark" ? darkTheme : lightTheme;
-  const data = useMemo(() => MOCK_COURSES, []);
+  const [courses, setCourses] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const response = await studentApi.classes();
+        setCourses(response.data || []);
+      } catch (_error) {
+        setCourses([]);
+      }
+    };
+    load();
+  }, []);
+
+  const data = useMemo(
+    () =>
+      courses.map((enrollment) => {
+        const cls = enrollment.classOffering;
+        return {
+          id: String(enrollment.id),
+          code: cls?.course?.code || "N/A",
+          name: cls?.course?.title || "Unknown course",
+          section: cls?.section || "-",
+          meta: `${cls?.semester || "N/A"} · ${cls?.schedule || "TBA"}`,
+        };
+      }),
+    [courses],
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>

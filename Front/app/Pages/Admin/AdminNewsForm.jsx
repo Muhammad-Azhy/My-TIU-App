@@ -7,66 +7,77 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { darkTheme, lightTheme } from "../../Styles/theme";
-import {
-  addManagedNews,
-  updateManagedNews,
-} from "../../Redux/Slices/Admin/adminSlice";
 import { rS, mS, vS } from "../../Styles/responsive";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { adminApi, guestApi } from "../../services/api";
 
 export default function AdminNewsForm({ navigation, route }) {
+  useScreenPerformance("Admin News Form Screen");
+
   const itemId = route.params?.itemId;
   const mode = useSelector((s) => s.theme.mode);
-  const items = useSelector((s) => s.admin.managedNews);
-  const dispatch = useDispatch();
   const theme = mode === "dark" ? darkTheme : lightTheme;
+  const [items, setItems] = useState([]);
 
   const existing = useMemo(
-    () => items.find((n) => n.id === itemId),
-    [items, itemId]
+    () => items.find((n) => String(n.id) === String(itemId)),
+    [items, itemId],
   );
+
+  useEffect(() => {
+    const load = async () => {
+      const response = await guestApi.news();
+      setItems(response.data || []);
+    };
+    load();
+  }, []);
 
   const [title, setTitle] = useState(existing?.title ?? "");
   const [content, setContent] = useState(existing?.content ?? "");
   const [departmentLabel, setDepartmentLabel] = useState(
-    existing?.departmentLabel ?? "Global"
+    existing?.departmentLabel ?? "Global",
   );
 
   useEffect(() => {
     if (!itemId) {
       setTitle("");
       setContent("");
-      setDepartmentLabel("Global");
+      setDepartmentLabel("");
       return;
     }
     const item = items.find((n) => n.id === itemId);
     if (item) {
       setTitle(item.title);
       setContent(item.content);
-      setDepartmentLabel(item.departmentLabel ?? "Global");
+      setDepartmentLabel(item.department?.name ?? "");
     }
   }, [itemId, items]);
 
-  const save = () => {
+  const save = async () => {
     if (!title.trim() || !content.trim()) {
       Alert.alert("Missing fields", "Title and content are required.");
       return;
     }
-    if (existing) {
-      dispatch(
-        updateManagedNews({
-          id: existing.id,
-          title,
-          content,
-          departmentLabel,
-        })
+    try {
+      const payload = {
+        title: title.trim(),
+        content: content.trim(),
+      };
+      if (existing) {
+        await adminApi.updateNews(existing.id, payload);
+      } else {
+        await adminApi.createNews(payload);
+      }
+      navigation.goBack();
+    } catch (apiError) {
+      Alert.alert(
+        "Save failed",
+        apiError?.response?.data?.message || "Could not save news.",
       );
-    } else {
-      dispatch(addManagedNews({ title, content, departmentLabel }));
     }
-    navigation.goBack();
   };
 
   return (
@@ -88,7 +99,11 @@ export default function AdminNewsForm({ navigation, route }) {
         placeholderTextColor={theme.subText}
         style={[
           styles.input,
-          { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
+          {
+            color: theme.text,
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+          },
         ]}
       />
 
@@ -102,7 +117,11 @@ export default function AdminNewsForm({ navigation, route }) {
         textAlignVertical="top"
         style={[
           styles.inputArea,
-          { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
+          {
+            color: theme.text,
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+          },
         ]}
       />
 
@@ -116,7 +135,11 @@ export default function AdminNewsForm({ navigation, route }) {
         placeholderTextColor={theme.subText}
         style={[
           styles.input,
-          { color: theme.text, backgroundColor: theme.card, borderColor: theme.border },
+          {
+            color: theme.text,
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+          },
         ]}
       />
 

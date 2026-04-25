@@ -12,12 +12,12 @@ export const lightTheme = {
   textSec: "#ffffff",
   // Special box colors (light)
   specialBoxes: {
-    settings: "#7A7A7A", // grey for Settings
-    grades: "#B85050", // red for Grades
-    tuition: "#D9C45A", // gold for Tuition
-    schedule: "#6BBF59", // green for Schedule
-    courses: "#3A7BD5", // blue for Courses
-    assignments: "#E0A500", // yellow for Assignments
+    settings: "#7A7A7A",
+    grades: "#B85050",
+    tuition: "#D9C45A",
+    schedule: "#6BBF59",
+    courses: "#3A7BD5",
+    assignments: "#E0A500",
   },
 };
 

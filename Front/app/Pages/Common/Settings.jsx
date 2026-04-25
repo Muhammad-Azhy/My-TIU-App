@@ -14,8 +14,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { toggleTheme } from "../../Redux/Slices/Theme/themeSlice";
 import { clearUser } from "../../Redux/Slices/User/userSlice";
 import { darkTheme, lightTheme } from "../../Styles/theme";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { clearAuth } from "../../services/authStorage";
+import { setApiToken } from "../../services/api";
 
 export default function Settings() {
+  useScreenPerformance("Settings Screen");
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const mode = useSelector((state) => state.theme.mode);
@@ -23,7 +27,9 @@ export default function Settings() {
 
   const theme = mode === "dark" ? darkTheme : lightTheme;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await clearAuth();
+    setApiToken(null);
     dispatch(clearUser());
   };
 
@@ -85,8 +91,6 @@ export default function Settings() {
           thumbColor={theme.primary}
         />
       </View>
-
-     
 
       {/* ABOUT */}
       <Text style={[styles.section, { color: theme.subText }]}>About</Text>

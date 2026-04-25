@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS } from "../../Styles/responsive";
+import useScreenPerformance from "../../Hooks/useScreenPerformance";
 
 function Row({ label, value, theme }) {
   return (
@@ -14,12 +15,16 @@ function Row({ label, value, theme }) {
 }
 
 export default function StudentProfile() {
+  useScreenPerformance("Student Profile Screen");
+
   const mode = useSelector((s) => s.theme.mode);
   const data = useSelector((s) => s.user.data);
   const role = useSelector((s) => s.user.role);
   const theme = mode === "dark" ? darkTheme : lightTheme;
   const isInstructor = role === "lecturer";
   const isAdmin = role === "admin";
+  const fullName =
+    data?.name || `${data?.firstName || ""} ${data?.lastName || ""}`.trim();
 
   return (
     <ScrollView
@@ -28,16 +33,20 @@ export default function StudentProfile() {
     >
       <Text style={[styles.heading, { color: theme.text }]}>Profile</Text>
       <View style={[styles.card, { backgroundColor: theme.card }]}>
-        <Row label="Name" value={data?.name} theme={theme} />
+        <Row label="Name" value={fullName} theme={theme} />
         <Row
           label={
             isAdmin ? "Admin ID" : isInstructor ? "Staff ID" : "Student ID"
           }
-          value={data?.id}
+          value={String(data?.id || data?.student?.id || data?.lecturer?.id || "—")}
           theme={theme}
         />
         <Row label="Email" value={data?.email} theme={theme} />
-        <Row label="Department" value={data?.department} theme={theme} />
+        <Row
+          label="Department"
+          value={data?.department || data?.student?.department?.name || data?.lecturer?.department?.name}
+          theme={theme}
+        />
         {isInstructor || isAdmin ? (
           <Row label="Position" value={data?.position} theme={theme} />
         ) : (

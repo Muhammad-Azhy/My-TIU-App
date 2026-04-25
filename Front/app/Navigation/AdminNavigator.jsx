@@ -12,6 +12,7 @@ import AdminNewsList from "../Pages/Admin/AdminNewsList";
 import AdminNewsForm from "../Pages/Admin/AdminNewsForm";
 import AdminUsersList from "../Pages/Admin/AdminUsersList";
 import AdminUserDetail from "../Pages/Admin/AdminUserDetail";
+import AdminAssignEnrollment from "../Pages/Admin/AdminAssignEnrollment";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -39,6 +40,10 @@ function AdminHomeStack() {
       <Stack.Screen name="AdminDashboardMain" component={AdminDashboard} />
       <Stack.Screen name="AdminUsersList" component={AdminUsersList} />
       <Stack.Screen name="AdminUserDetail" component={AdminUserDetail} />
+      <Stack.Screen
+        name="AdminAssignEnrollment"
+        component={AdminAssignEnrollment}
+      />
     </Stack.Navigator>
   );
 }
