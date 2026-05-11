@@ -7,12 +7,13 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import DepartmentBox from "../../Components/Other/DepartmentBox";
 import { rS } from "../../Styles/responsive";
 import useTheme from "../../Hooks/useTheme";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
-import { guestApi } from "../../services/api";
+import { guestApi, getApiErrorMessage } from "../../services/api";
 
 const groupDepartments = (departments) => {
   const groups = {};
@@ -32,9 +33,12 @@ export default function Departments() {
   const [departments, setDepartments] = useState([]);
   const theme = useTheme();
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
+      setError("");
       try {
         const response = await guestApi.departments();
         const mapped = (response.data || []).map((dept) => ({
@@ -47,7 +51,10 @@ export default function Departments() {
         }));
         setDepartments(mapped);
       } catch (apiError) {
-        setError(apiError?.response?.data?.message || "Failed to load departments.");
+        setDepartments([]);
+        setError(getApiErrorMessage(apiError, "Failed to load departments."));
+      } finally {
+        setLoading(false);
       }
     };
     load();
@@ -105,9 +112,13 @@ export default function Departments() {
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          <Text style={{ color: theme.subText, textAlign: "center" }}>
-            {error || "No departments found."}
-          </Text>
+          loading ? (
+            <ActivityIndicator style={{ marginTop: rS(24) }} color={theme.primary} />
+          ) : (
+            <Text style={{ color: error ? "#b00020" : theme.subText, textAlign: "center" }}>
+              {error || "No departments found."}
+            </Text>
+          )
         }
       />
     </KeyboardAvoidingView>

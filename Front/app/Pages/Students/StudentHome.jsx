@@ -14,6 +14,7 @@ import { rS, mS } from "../../Styles/responsive";
 import BigBox from "../../Components/Other/BigBox";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { toDashboardUser } from "../../utils/dashboardUser";
 
 function QuickTile({ title, color, icon, onPress, theme }) {
   return (
@@ -39,13 +40,7 @@ export default function StudentHome({ navigation }) {
   const profile = useSelector((s) => s.user.data);
   const theme = themeMode === "dark" ? darkTheme : lightTheme;
 
-  const user = profile || {
-    name: "Student",
-    id: "--",
-    grade: "--",
-    semester: "--",
-    gpa: "--",
-  };
+  const user = toDashboardUser(profile);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -126,21 +121,14 @@ export default function StudentHome({ navigation }) {
           }
         />
         <QuickTile
-          title="Grades"
-          color={theme.specialBoxes.grades}
-          icon="grading"
-          theme={theme}
-          onPress={() => goTab("StudentCoursesTab", { screen: "StudentGrades" })}
-        />
-      </View>
-      <View style={styles.row}>
-        <QuickTile
           title="News"
           color={theme.secondary}
           icon="article"
           theme={theme}
           onPress={() => goTab("StudentNewsTab")}
         />
+      </View>
+      <View style={styles.row}>
         <QuickTile
           title="Settings"
           color={theme.specialBoxes.settings}
@@ -150,6 +138,7 @@ export default function StudentHome({ navigation }) {
             goTab("StudentSettingsTab", { screen: "StudentSettingsMain" })
           }
         />
+        <View style={{ width: "48%" }} />
       </View>
     </ScrollView>
   );

@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import ListCard from "../../Components/lists/ListCard";
 import { rS, mS } from "../../Styles/responsive";
-import { guestApi } from "../../services/api";
+import { guestApi, getApiErrorMessage } from "../../services/api";
 
 export default function StudentAnnouncements({ navigation }) {
   const mode = useSelector((s) => s.theme.mode);
@@ -21,8 +21,9 @@ export default function StudentAnnouncements({ navigation }) {
         const response = await guestApi.announcements();
         setAnnouncements(response.data || []);
       } catch (apiError) {
+        setAnnouncements([]);
         setError(
-          apiError?.response?.data?.message || "Failed to load announcements.",
+          getApiErrorMessage(apiError, "Failed to load announcements."),
         );
       } finally {
         setLoading(false);
@@ -60,9 +61,11 @@ export default function StudentAnnouncements({ navigation }) {
           />
         )}
         ListEmptyComponent={
-          <Text style={{ color: theme.subText, textAlign: "center" }}>
-            No announcements yet.
-          </Text>
+          !loading && !error ? (
+            <Text style={{ color: theme.subText, textAlign: "center" }}>
+              No announcements yet.
+            </Text>
+          ) : null
         }
       />
     </View>

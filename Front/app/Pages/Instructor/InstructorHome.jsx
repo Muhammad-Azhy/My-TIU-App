@@ -14,6 +14,7 @@ import { rS, mS } from "../../Styles/responsive";
 import BigBox from "../../Components/Other/BigBox";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import { toDashboardUser } from "../../utils/dashboardUser";
 
 function QuickTile({ title, color, icon, onPress, theme }) {
   return (
@@ -39,12 +40,7 @@ export default function InstructorHome({ navigation }) {
   const profile = useSelector((s) => s.user.data);
   const theme = themeMode === "dark" ? darkTheme : lightTheme;
 
-  const user = profile || {
-    name: "Instructor",
-    id: "--",
-    department: "—",
-    position: "Lecturer",
-  };
+  const user = toDashboardUser(profile);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -121,22 +117,6 @@ export default function InstructorHome({ navigation }) {
           icon="assignment"
           theme={theme}
           onPress={() => navigation.navigate("InstructorAssignments")}
-        />
-        <QuickTile
-          title="Grade students"
-          color={theme.specialBoxes.grades}
-          icon="grading"
-          theme={theme}
-          onPress={() => navigation.navigate("InstructorGradeStudents")}
-        />
-      </View>
-      <View style={styles.row}>
-        <QuickTile
-          title="Messages"
-          color={theme.specialBoxes.schedule}
-          icon="forum"
-          theme={theme}
-          onPress={() => navigation.navigate("InstructorMessages")}
         />
         <QuickTile
           title="News"

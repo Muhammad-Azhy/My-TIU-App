@@ -14,11 +14,20 @@ export const clearAuth = async () => {
 };
 
 export const readAuth = async () => {
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
-  const userRaw = await AsyncStorage.getItem(USER_KEY);
-
-  return {
-    token: token || null,
-    user: userRaw ? JSON.parse(userRaw) : null,
-  };
+  try {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    const userRaw = await AsyncStorage.getItem(USER_KEY);
+    if (!userRaw) {
+      return { token: token || null, user: null };
+    }
+    try {
+      const user = JSON.parse(userRaw);
+      return { token: token || null, user };
+    } catch {
+      await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+      return { token: null, user: null };
+    }
+  } catch {
+    return { token: null, user: null };
+  }
 };

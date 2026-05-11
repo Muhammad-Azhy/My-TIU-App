@@ -1,21 +1,41 @@
 import axios from "axios";
 import { Platform } from "react-native";
 
+export { getApiErrorMessage } from "../utils/apiErrors";
+
 const WEB_BASE = process.env.EXPO_PUBLIC_API_BASE_URL_WEB;
 const ANDROID_BASE = process.env.EXPO_PUBLIC_API_BASE_URL_ANDROID;
 const DEVICE_BASE = process.env.EXPO_PUBLIC_API_BASE_URL_DEVICE;
 
-const API_BASE_URL =
-  Platform.OS === "web"
-    ? WEB_BASE
-    : Platform.OS === "android"
-      ? ANDROID_BASE || DEVICE_BASE
-      : DEVICE_BASE || WEB_BASE;
+/** Sensible default when env is missing (common in local dev). */
+const DEFAULT_DEV_BASE = "http://localhost:3000/api";
+
+function resolveBaseUrl() {
+  if (Platform.OS === "web") {
+    return WEB_BASE || DEFAULT_DEV_BASE;
+  }
+  if (Platform.OS === "android") {
+    return ANDROID_BASE || DEVICE_BASE || WEB_BASE || DEFAULT_DEV_BASE;
+  }
+  return DEVICE_BASE || WEB_BASE || DEFAULT_DEV_BASE;
+}
+
+const API_BASE_URL = resolveBaseUrl();
+
+if (__DEV__) {
+  // eslint-disable-next-line no-console
+  console.log("[API] baseURL resolved", { platform: Platform.OS, API_BASE_URL });
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 20000,
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
 });
+
 let authToken = null;
 
 export const setApiToken = (token) => {
@@ -23,36 +43,15 @@ export const setApiToken = (token) => {
 };
 
 api.interceptors.request.use((config) => {
-  console.log("[API][REQ]", {
-    platform: Platform.OS,
-    baseURL: config.baseURL,
-    url: config.url,
-    method: config.method,
-  });
-  // #region agent log
-  fetch("http://127.0.0.1:7577/ingest/8ac24eb4-5f94-4dbf-a6b4-b2fa5097aca3", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "f8db7c",
-    },
-    body: JSON.stringify({
-      sessionId: "f8db7c",
-      runId: "initial",
-      hypothesisId: "H1-H4",
-      location: "services/api.js:request-interceptor",
-      message: "Outgoing API request",
-      data: {
-        platform: Platform.OS,
-        baseURL: config.baseURL,
-        url: config.url,
-        method: config.method,
-        hasAuthHeader: Boolean(config.headers?.Authorization),
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
+  if (__DEV__) {
+    // eslint-disable-next-line no-console
+    console.log("[API][REQ]", {
+      platform: Platform.OS,
+      baseURL: config.baseURL,
+      url: config.url,
+      method: config.method,
+    });
+  }
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
   }
@@ -61,65 +60,24 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    console.log("[API][RES]", {
-      url: response.config?.url,
-      method: response.config?.method,
-      status: response.status,
-    });
-    // #region agent log
-    fetch("http://127.0.0.1:7577/ingest/8ac24eb4-5f94-4dbf-a6b4-b2fa5097aca3", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "f8db7c",
-      },
-      body: JSON.stringify({
-        sessionId: "f8db7c",
-        runId: "initial",
-        hypothesisId: "H2-H4",
-        location: "services/api.js:response-interceptor",
-        message: "API response success",
-        data: {
-          url: response.config?.url,
-          method: response.config?.method,
-          status: response.status,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log("[API][RES]", {
+        url: response.config?.url,
+        status: response.status,
+      });
+    }
     return response;
   },
   (error) => {
-    console.error("[API][ERR]", {
-      url: error?.config?.url,
-      method: error?.config?.method,
-      status: error?.response?.status || null,
-      message: error?.message || "unknown",
-    });
-    // #region agent log
-    fetch("http://127.0.0.1:7577/ingest/8ac24eb4-5f94-4dbf-a6b4-b2fa5097aca3", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "f8db7c",
-      },
-      body: JSON.stringify({
-        sessionId: "f8db7c",
-        runId: "initial",
-        hypothesisId: "H1-H3-H4",
-        location: "services/api.js:response-error",
-        message: "API response error",
-        data: {
-          url: error?.config?.url,
-          method: error?.config?.method,
-          status: error?.response?.status || null,
-          message: error?.message || "unknown",
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.error("[API][ERR]", {
+        url: error?.config?.url,
+        status: error?.response?.status ?? null,
+        message: error?.message,
+      });
+    }
     return Promise.reject(error);
   },
 );
