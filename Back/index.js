@@ -16,6 +16,17 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
+const missingDbEnv = ["DB_HOST", "DB_USER", "DB_NAME"].filter(
+  (k) => !process.env[k] || String(process.env[k]).trim() === "",
+);
+if (missingDbEnv.length) {
+  console.warn(
+    "[MyTIU] Warning: missing database env vars:",
+    missingDbEnv.join(", "),
+    "— login and data routes will fail until .env is configured. See Back/.env.example",
+  );
+}
+
 app.use(
   cors({
     origin: "*",

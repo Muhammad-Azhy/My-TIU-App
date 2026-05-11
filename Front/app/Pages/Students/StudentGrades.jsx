@@ -3,7 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-nat
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { mS, rS } from "../../Styles/responsive";
-import { studentApi } from "../../services/api";
+import { studentApi, getApiErrorMessage } from "../../services/api";
 
 export default function StudentGrades() {
   const mode = useSelector((s) => s.theme.mode);
@@ -20,7 +20,8 @@ export default function StudentGrades() {
         const response = await studentApi.grades();
         setGrades(response.data || []);
       } catch (apiError) {
-        setError(apiError?.response?.data?.message || "Failed to load grades.");
+        setGrades([]);
+        setError(getApiErrorMessage(apiError, "Failed to load grades."));
       } finally {
         setLoading(false);
       }

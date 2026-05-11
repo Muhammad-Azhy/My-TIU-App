@@ -6,19 +6,21 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import Logo from "../../../assets/TIU.webp";
 import { mS, rS, vS } from "../../Styles/responsive";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   setAuthError,
   setAuthLoading,
   setUser,
 } from "../../Redux/Slices/User/userSlice";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
-import { authApi, setApiToken } from "../../services/api";
+import { authApi, setApiToken, getApiErrorMessage } from "../../services/api";
 import { clearAuth, saveAuth } from "../../services/authStorage";
+import { extractAuthPayload } from "../../utils/authPayload";
 
 const Login = () => {
   useScreenPerformance("Login Screen");
@@ -26,33 +28,9 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const dispatch = useDispatch();
+  const authLoading = useSelector((s) => s.user.loading);
 
   const handleLogin = async () => {
-    console.log("[LOGIN] submit", {
-      hasEmail: Boolean(email.trim()),
-      hasPassword: Boolean(password.trim()),
-    });
-    // #region agent log
-    fetch("http://127.0.0.1:7577/ingest/8ac24eb4-5f94-4dbf-a6b4-b2fa5097aca3", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "f8db7c",
-      },
-      body: JSON.stringify({
-        sessionId: "f8db7c",
-        runId: "initial",
-        hypothesisId: "H5",
-        location: "Pages/Guests/Login.jsx:handleLogin-start",
-        message: "Login submit invoked",
-        data: {
-          hasEmail: Boolean(email.trim()),
-          hasPassword: Boolean(password.trim()),
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required.");
       return;
@@ -66,45 +44,25 @@ const Login = () => {
         email: email.trim(),
         password,
       });
-      console.log("[LOGIN] success", {
-        status: response.status,
-        role: response?.data?.user?.role,
-      });
-      const { token, user } = response.data;
-      setApiToken(token);
-      await saveAuth({ token, user });
-      dispatch(setUser({ token, user }));
+      const payload = extractAuthPayload(response?.data);
+      if (!payload?.token || !payload?.user) {
+        const msg =
+          "Unexpected response from server (missing token or user). Check API version.";
+        setError(msg);
+        dispatch(setAuthError(msg));
+        return;
+      }
+      if (!payload.user.role) {
+        const msg = "Account has no role assigned. Contact support.";
+        setError(msg);
+        dispatch(setAuthError(msg));
+        return;
+      }
+      setApiToken(payload.token);
+      await saveAuth({ token: payload.token, user: payload.user });
+      dispatch(setUser({ token: payload.token, user: payload.user }));
     } catch (apiError) {
-      console.error("[LOGIN] failed", {
-        status: apiError?.response?.status || null,
-        message: apiError?.message || "unknown",
-      });
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7577/ingest/8ac24eb4-5f94-4dbf-a6b4-b2fa5097aca3",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "f8db7c",
-          },
-          body: JSON.stringify({
-            sessionId: "f8db7c",
-            runId: "initial",
-            hypothesisId: "H2-H3-H4",
-            location: "Pages/Guests/Login.jsx:handleLogin-catch",
-            message: "Login failed in UI catch",
-            data: {
-              status: apiError?.response?.status || null,
-              message: apiError?.message || "unknown",
-            },
-            timestamp: Date.now(),
-          }),
-        },
-      ).catch(() => {});
-      // #endregion
-      const message =
-        apiError?.response?.data?.message || "Login failed. Try again.";
+      const message = getApiErrorMessage(apiError, "Login failed. Try again.");
       setError(message);
       dispatch(setAuthError(message));
     } finally {
@@ -135,9 +93,11 @@ const Login = () => {
               marginVertical: mS(20),
               fontSize: mS(20),
               textAlign: "center",
+              fontWeight: "700",
+              color: "#333",
             }}
           >
-            Login
+            Sign in
           </Text>
           <TextInput
             placeholder="example@std.tiu.edu.iq"
@@ -145,6 +105,7 @@ const Login = () => {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            editable={!authLoading}
             style={styles.input}
           />
           <TextInput
@@ -152,23 +113,36 @@ const Login = () => {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            editable={!authLoading}
             style={styles.input}
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity onPress={handleLogin} style={styles.button}>
-            <Text>Enter</Text>
+          <TouchableOpacity
+            onPress={handleLogin}
+            style={[styles.button, authLoading && styles.buttonDisabled]}
+            disabled={authLoading}
+          >
+            {authLoading ? (
+              <ActivityIndicator color="#333" />
+            ) : (
+              <Text style={styles.buttonLabel}>Enter</Text>
+            )}
           </TouchableOpacity>
 
           <View
             style={{
-              borderBottomColor: "black",
+              borderBottomColor: "rgba(0,0,0,0.08)",
               borderBottomWidth: 1,
               margin: mS(20),
             }}
           />
-          <TouchableOpacity style={styles.SkipButton} onPress={handleSkip}>
-            <Text>Skip Login</Text>
+          <TouchableOpacity
+            style={styles.SkipButton}
+            onPress={handleSkip}
+            disabled={authLoading}
+          >
+            <Text style={styles.skipLabel}>Continue as guest</Text>
           </TouchableOpacity>
         </View>
 
@@ -177,13 +151,13 @@ const Login = () => {
             position: "absolute",
             bottom: mS(10),
             alignSelf: "center",
-            color: "#ccc",
+            color: "rgba(255,255,255,0.55)",
             fontSize: mS(12),
             marginBottom: vS(10),
             textAlign: "center",
           }}
         >
-          Copyright CC 2025 @Tisk International University
+          Copyright © Tishk International University
         </Text>
       </View>
     </KeyboardAwareScrollView>
@@ -193,40 +167,40 @@ const Login = () => {
 export default Login;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  mainContent: {
-    flex: 1,
-  },
   button: {
     backgroundColor: "#f2b136",
     borderRadius: vS(22),
-    padding: 10,
+    padding: 12,
+    width: rS(190),
+    alignSelf: "center",
+    alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonLabel: {
+    fontWeight: "700",
+    color: "#333",
+  },
+  SkipButton: {
+    backgroundColor: "#E8E8E8",
+    borderRadius: vS(22),
+    padding: 12,
     width: rS(190),
     alignSelf: "center",
     alignItems: "center",
   },
-  SkipButton: {
-    backgroundColor: "#E0E0E0",
-    color: "#555555",
-    borderRadius: vS(22),
-    padding: 10,
-    width: rS(190),
-    alignSelf: "center",
-    alignItems: "center",
+  skipLabel: {
+    color: "#444",
+    fontWeight: "600",
   },
   loginContainer: {
     flex: 1,
-    justifyContent: "flex-start", // spaces items equally from top to bottom
+    justifyContent: "flex-start",
     padding: mS(30),
     backgroundColor: "#720e3dff",
-  },
-  loginTitle: {
-    fontSize: mS(24),
-    marginBottom: mS(40),
-    textAlign: "center",
-    fontWeight: "bold",
   },
   image: {
     width: rS(150),
@@ -250,7 +224,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: "white",
     borderColor: "#f9deb0",
-    padding: mS(10),
+    padding: mS(12),
     marginBottom: mS(15),
     borderRadius: 20,
   },
@@ -261,8 +235,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(238, 238, 238, 1)",
   },
   error: {
-    color: "red",
+    color: "#b00020",
     marginBottom: mS(15),
     textAlign: "center",
+    fontWeight: "500",
   },
 });

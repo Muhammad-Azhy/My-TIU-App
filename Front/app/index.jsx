@@ -1,42 +1,57 @@
-import React, { useEffect } from "react";
-import { SafeAreaView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { SafeAreaView, ActivityIndicator, View, StyleSheet } from "react-native";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { store } from "./Redux/Store/storeConfig";
 import Login from "./Pages/Guests/Login";
 import RootNavigator from "./Navigation/RootNavigator";
-import { mS } from "./Styles/responsive";
 import { readAuth } from "./services/authStorage";
 import { setApiToken } from "./services/api";
 import { setUser } from "./Redux/Slices/User/userSlice";
+import { darkTheme, lightTheme } from "./Styles/theme";
 
-// ✅ Theme wrapper component
 const MainApp = () => {
   const dispatch = useDispatch();
   const userRole = useSelector((state) => state.user.role);
   const mode = useSelector((state) => state.theme.mode);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     const bootstrapAuth = async () => {
-      console.log("[AUTH] bootstrap start");
-      const saved = await readAuth();
-      console.log("[AUTH] bootstrap loaded", {
-        hasToken: Boolean(saved?.token),
-        hasUser: Boolean(saved?.user),
-      });
-      if (saved?.token && saved?.user) {
-        setApiToken(saved.token);
-        dispatch(setUser({ token: saved.token, user: saved.user }));
-        console.log("[AUTH] bootstrap restored session");
+      try {
+        const saved = await readAuth();
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.log("[AUTH] bootstrap", {
+            hasToken: Boolean(saved?.token),
+            hasUser: Boolean(saved?.user),
+          });
+        }
+        if (saved?.token && saved?.user) {
+          setApiToken(saved.token);
+          dispatch(setUser({ token: saved.token, user: saved.user }));
+        }
+      } catch (e) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.warn("[AUTH] bootstrap failed", e?.message);
+        }
+      } finally {
+        setAuthReady(true);
       }
     };
     bootstrapAuth();
   }, [dispatch]);
 
-  // console.log("User Role:", userRole);
-  // console.log("Theme Mode:", mode);
-
-  // Optional: use a dynamic theme background
+  const theme = mode === "dark" ? darkTheme : lightTheme;
   const backgroundColor = mode === "dark" ? "#121212" : "#eeeeee";
+
+  if (!authReady) {
+    return (
+      <SafeAreaView style={[styles.center, { backgroundColor }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </SafeAreaView>
+    );
+  }
 
   if (!userRole) {
     return (
@@ -53,7 +68,14 @@ const MainApp = () => {
   );
 };
 
-// ✅ Wrap the entire app in Provider
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
+
 const App = () => {
   return (
     <Provider store={store}>

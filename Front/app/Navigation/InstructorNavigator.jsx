@@ -7,13 +7,11 @@ import { mS } from "../Styles/responsive";
 
 import News from "../Pages/Common/News";
 import Settings from "../Pages/Common/Settings";
-import Chat from "../Pages/Common/Chat";
 import StudentProfile from "../Pages/Students/StudentProfile";
 import InstructorHome from "../Pages/Instructor/InstructorHome";
 import InstructorClasses from "../Pages/Instructor/InstructorClasses";
 import InstructorPostAnnouncement from "../Pages/Instructor/InstructorPostAnnouncement";
 import InstructorAssignments from "../Pages/Instructor/InstructorAssignments";
-import InstructorGradeStudents from "../Pages/Instructor/InstructorGradeStudents";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -47,11 +45,7 @@ function InstructorHomeStack() {
         name="InstructorAssignments"
         component={InstructorAssignments}
       />
-      <Stack.Screen
-        name="InstructorGradeStudents"
-        component={InstructorGradeStudents}
-      />
-      <Stack.Screen name="InstructorMessages" component={Chat} />
+
     </Stack.Navigator>
   );
 }

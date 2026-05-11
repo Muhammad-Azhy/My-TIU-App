@@ -1,57 +1,89 @@
-import React, { useEffect, useState } from "react";
-import { View, FlatList, ActivityIndicator, StyleSheet, Text } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { InteractionManager } from "react-native";
+import {
+  View,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  Pressable,
+  ScrollView,
+} from "react-native";
 import { useSelector } from "react-redux";
 import { lightTheme, darkTheme } from "../../Styles/theme";
 import Announcment from "../../Components/Other/Announcement";
-import { vS } from "../../Styles/responsive";
+import { vS, rS, mS } from "../../Styles/responsive";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
-import { guestApi } from "../../services/api";
+import { guestApi, getApiErrorMessage } from "../../services/api";
+import PageHeader from "../../Components/ui/PageHeader";
+import EmptyState from "../../Components/ui/EmptyState";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
-const News = () => {
+const FEATURED_COUNT = 5;
+
+function FeaturedSlide({ item, theme, slideWidth }) {
+  const excerpt = (item.content || "").replace(/\s+/g, " ").trim();
+  const preview =
+    excerpt.length > 140 ? `${excerpt.slice(0, 140)}…` : excerpt || "Tap below for full story.";
+  const dateStr = item.createdAt
+    ? new Date(item.createdAt).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
+
+  return (
+    <View style={[styles.slidePage, { width: slideWidth }]}>
+      <View style={[styles.slideCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <View style={[styles.slideBadge, { backgroundColor: theme.primary }]}>
+          <Text style={styles.slideBadgeText}>Featured</Text>
+        </View>
+        <Icon name="article" size={mS(42)} color={theme.subText} style={{ marginBottom: vS(8) }} />
+        <Text style={[styles.slideTitle, { color: theme.text }]} numberOfLines={3}>
+          {item.title}
+        </Text>
+        <Text style={[styles.slidePreview, { color: theme.subText }]}>{preview}</Text>
+        {dateStr ? (
+          <Text style={[styles.slideDate, { color: theme.subText }]}>{dateStr}</Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+export default function News() {
   useScreenPerformance("News Screen");
+  const { width: windowWidth } = useWindowDimensions();
   const [newsData, setNewsData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [carouselWidth, setCarouselWidth] = useState(windowWidth);
+  const carouselRef = useRef(null);
+  const autoTimer = useRef(null);
+  const isAutoScrolling = useRef(false);
 
   const mode = useSelector((state) => state.theme.mode);
   const theme = mode === "dark" ? darkTheme : lightTheme;
 
+  const featured = useMemo(
+    () => newsData.slice(0, Math.min(FEATURED_COUNT, newsData.length)),
+    [newsData],
+  );
+  const feed = useMemo(() => newsData.slice(featured.length), [newsData, featured.length]);
+
   useEffect(() => {
     const fetchNews = async () => {
-      console.log("[NEWS] fetch start");
-      // #region agent log
-      fetch("http://127.0.0.1:7577/ingest/8ac24eb4-5f94-4dbf-a6b4-b2fa5097aca3", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "f8db7c",
-        },
-        body: JSON.stringify({
-          sessionId: "f8db7c",
-          runId: "initial",
-          hypothesisId: "H5",
-          location: "Pages/Common/News.jsx:fetchNews-start",
-          message: "News fetch effect triggered",
-          data: {},
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
       setLoading(true);
       setError("");
       try {
         const response = await guestApi.news();
-        console.log("[NEWS] fetch success", {
-          status: response.status,
-          count: Array.isArray(response.data) ? response.data.length : 0,
-        });
-        setNewsData(response.data || []);
+        setNewsData(Array.isArray(response.data) ? response.data : []);
       } catch (apiError) {
-        console.error("[NEWS] fetch failed", {
-          status: apiError?.response?.status || null,
-          message: apiError?.message || "unknown",
-        });
-        setError(apiError?.response?.data?.message || "Failed to load news.");
+        setNewsData([]);
+        setError(getApiErrorMessage(apiError, "Failed to load news."));
       } finally {
         setLoading(false);
       }
@@ -59,59 +91,277 @@ const News = () => {
     fetchNews();
   }, []);
 
+  const startAutoTimer = useCallback(() => {
+    if (autoTimer.current) clearInterval(autoTimer.current);
+    if (featured.length <= 1) return;
+    autoTimer.current = setInterval(() => {
+      isAutoScrolling.current = true;
+      setSlideIndex((prev) => {
+        const next = (prev + 1) % featured.length;
+        if (carouselRef.current) {
+          carouselRef.current.scrollTo({
+            x: next * carouselWidth,
+            animated: true,
+          });
+        }
+        return next;
+      });
+    }, 6500);
+  }, [featured.length, carouselWidth]);
+
+  const onCarouselScrollEnd = useCallback(
+    (e) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const w = e.nativeEvent.layoutMeasurement.width || carouselWidth;
+      const i = Math.round(x / Math.max(w, 1));
+      const clamped = Math.max(0, Math.min(i, Math.max(featured.length - 1, 0)));
+      if (isAutoScrolling.current) {
+        isAutoScrolling.current = false;
+        return;
+      }
+      setSlideIndex(clamped);
+      startAutoTimer();
+    },
+    [carouselWidth, featured.length, startAutoTimer],
+  );
+
+  useEffect(() => {
+    startAutoTimer();
+    return () => {
+      if (autoTimer.current) clearInterval(autoTimer.current);
+    };
+  }, [startAutoTimer]);
+
+  const renderFeedItem = useCallback(
+    ({ item }) => (
+      <Announcment
+        id={item.id}
+        title={item.title}
+        desc={item.content}
+        date={new Date(item.createdAt).toLocaleDateString()}
+        images={[]}
+        theme={theme}
+      />
+    ),
+    [theme],
+  );
+
+  const carouselSection = useMemo(() => {
+    if (loading) {
+      return (
+        <View style={styles.skeletonBlock}>
+          <View style={[styles.skelLine, { backgroundColor: theme.border }]} />
+          <View style={[styles.skelLineShort, { backgroundColor: theme.border }]} />
+        </View>
+      );
+    }
+    if (error) {
+      return (
+        <View style={{ marginBottom: rS(12) }}>
+          <Text style={[styles.bannerErr, { color: "#b00020" }]}>{error}</Text>
+        </View>
+      );
+    }
+    if (!featured.length) {
+      return (
+        <EmptyState
+          icon="newspaper"
+          title="No news yet"
+          message="Check back when new stories are published."
+          theme={theme}
+        />
+      );
+    }
+    return (
+      <View style={{ marginBottom: vS(16) }}>
+        <Text style={[styles.sectionLabel, { color: theme.subText, paddingHorizontal: rS(12) }]}>
+          Highlights
+        </Text>
+        <ScrollView
+          ref={carouselRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onLayout={(e) => setCarouselWidth(e.nativeEvent.layout.width || windowWidth)}
+          onMomentumScrollEnd={onCarouselScrollEnd}
+          decelerationRate="fast"
+        >
+          {featured.map((item) => (
+            <FeaturedSlide key={item.id} item={item} theme={theme} slideWidth={carouselWidth} />
+          ))}
+        </ScrollView>
+        <View style={styles.dotsRow}>
+          {featured.map((_, i) => (
+            <Pressable key={String(i)} onPress={() => {
+                setSlideIndex(i);
+                if (carouselRef.current) {
+                  carouselRef.current.scrollTo({ x: i * carouselWidth, animated: true });
+                }
+                startAutoTimer();
+              }} hitSlop={8}>
+              <View
+                style={[
+                  styles.dot,
+                  {
+                    backgroundColor:
+                      i === slideIndex ? theme.primary : theme.border,
+                  },
+                ]}
+              />
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    );
+  }, [loading, error, featured, theme, carouselWidth, onCarouselScrollEnd, slideIndex, startAutoTimer]);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {loading ? (
+      {loading && !newsData.length ? (
         <ActivityIndicator
           size="large"
           color={theme.primary}
-          style={{ marginTop: vS(16) }}
+          style={{ marginTop: vS(24) }}
         />
       ) : null}
-      {error ? (
-        <Text style={{ color: "#d14343", textAlign: "center", marginBottom: vS(8) }}>
-          {error}
-        </Text>
-      ) : null}
       <FlatList
-        data={newsData}
+        data={feed}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <Announcment
-            id={item.id}
-            title={item.title}
-            desc={item.content}
-            date={new Date(item.createdAt).toLocaleDateString()}
-            images={[]}
-            theme={theme}
-          />
-        )}
-        ListFooterComponent={
-          loading && (
-            <ActivityIndicator
-              size="large"
-              color={theme.primary}
-              style={{ margin: vS(10) }}
-            />
-          )
+        ListHeaderComponent={
+          <>
+            <View style={styles.headerPad}>
+              <PageHeader
+                title="News"
+                subtitle="University updates, events, and announcements from campus."
+                theme={theme}
+              />
+            </View>
+            <View style={styles.carouselBleed}>{carouselSection}</View>
+            {!loading && !error && feed.length > 0 ? (
+              <Text style={[styles.sectionLabel, { color: theme.subText, marginBottom: vS(8) }]}>
+                All stories
+              </Text>
+            ) : null}
+          </>
         }
+        renderItem={renderFeedItem}
+        contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          !loading ? (
-            <Text style={{ textAlign: "center", color: theme.subText }}>
-              No news available.
+          !loading && !error && newsData.length === 0 ? (
+            <EmptyState
+              icon="feed"
+              title="Nothing to show"
+              message="There are no news items in the feed yet."
+              theme={theme}
+            />
+          ) : !loading && !error && feed.length === 0 && featured.length > 0 ? (
+            <Text style={{ textAlign: "center", color: theme.subText, marginTop: vS(8) }}>
+              All current stories are highlighted above.
             </Text>
           ) : null
         }
       />
     </View>
   );
-};
-
-export default News;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+  },
+  headerPad: {
+    paddingHorizontal: rS(16),
+    paddingTop: rS(8),
+    marginBottom: vS(4),
+  },
+  carouselBleed: {
+    marginHorizontal: -rS(12),
+  },
+  listContent: {
+    paddingHorizontal: rS(12),
+    paddingBottom: rS(32),
+  },
+  sectionLabel: {
+    fontSize: mS(13),
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: vS(10),
+    marginLeft: rS(4),
+  },
+  slidePage: {
+    paddingHorizontal: rS(12),
+    justifyContent: "center",
+  },
+  slideCard: {
+    borderRadius: rS(16),
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: rS(18),
+    minHeight: vS(200),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  slideBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: rS(10),
+    paddingVertical: vS(4),
+    borderRadius: rS(8),
+    marginBottom: vS(10),
+  },
+  slideBadgeText: {
+    color: "#1a1a1a",
+    fontWeight: "800",
+    fontSize: mS(11),
+    textTransform: "uppercase",
+  },
+  slideTitle: {
+    fontSize: mS(20),
+    fontWeight: "800",
+    marginBottom: vS(8),
+  },
+  slidePreview: {
+    fontSize: mS(14),
+    lineHeight: mS(21),
+  },
+  slideDate: {
+    marginTop: vS(12),
+    fontSize: mS(12),
+    fontWeight: "600",
+  },
+  dotsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: vS(10),
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  bannerErr: {
+    textAlign: "center",
+    fontWeight: "600",
+    padding: rS(12),
+  },
+  skeletonBlock: {
+    paddingHorizontal: rS(16),
+    marginBottom: vS(16),
+  },
+  skelLine: {
+    height: vS(18),
+    borderRadius: 8,
+    marginBottom: vS(10),
+    width: "100%",
+    opacity: 0.35,
+  },
+  skelLineShort: {
+    height: vS(18),
+    borderRadius: 8,
+    width: "55%",
+    opacity: 0.35,
   },
 });

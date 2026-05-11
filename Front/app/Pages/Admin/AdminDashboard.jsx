@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, View, Text, StyleSheet, Pressable } from "react-native";
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS } from "../../Styles/responsive";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
 
-import { adminApi } from "../../services/api";
+import { adminApi, getApiErrorMessage } from "../../services/api";
+import PageHeader from "../../Components/ui/PageHeader";
 
 function StatBox({ label, value, theme }) {
   return (
@@ -44,9 +52,13 @@ export default function AdminDashboard({ navigation }) {
     departments: 0,
     news: 0,
   });
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState("");
 
   useEffect(() => {
     const loadStats = async () => {
+      setStatsLoading(true);
+      setStatsError("");
       try {
         const response = await adminApi.dashboardStats();
         setStats({
@@ -54,8 +66,11 @@ export default function AdminDashboard({ navigation }) {
           departments: response.data.departments || 0,
           news: response.data.news || 0,
         });
-      } catch (_error) {
+      } catch (err) {
         setStats({ users: 0, departments: 0, news: 0 });
+        setStatsError(getApiErrorMessage(err, "Could not load dashboard statistics."));
+      } finally {
+        setStatsLoading(false);
       }
     };
     loadStats();
@@ -70,10 +85,20 @@ export default function AdminDashboard({ navigation }) {
       style={[styles.screen, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.heading, { color: theme.text }]}>Admin</Text>
-      <Text style={[styles.sub, { color: theme.subText }]}>
-        Overview and quick actions for live management flows.
-      </Text>
+      <View style={{ paddingHorizontal: rS(4), marginBottom: rS(8) }}>
+        <PageHeader
+          title="Admin"
+          subtitle="Overview and quick actions for live management flows."
+          theme={theme}
+        />
+      </View>
+
+      {statsLoading ? (
+        <ActivityIndicator size="large" color={theme.primary} style={{ marginVertical: rS(12) }} />
+      ) : null}
+      {statsError ? (
+        <Text style={[styles.statsErr, { color: "#b00020" }]}>{statsError}</Text>
+      ) : null}
 
       <View style={styles.statsRow}>
         <StatBox label="News items" value={String(stats.news)} theme={theme} />
@@ -127,8 +152,12 @@ export default function AdminDashboard({ navigation }) {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: rS(16), paddingBottom: rS(32) },
-  heading: { fontSize: mS(26), fontWeight: "bold" },
-  sub: { fontSize: mS(14), marginTop: rS(6), marginBottom: rS(20) },
+  statsErr: {
+    fontSize: mS(14),
+    fontWeight: "600",
+    marginBottom: rS(12),
+    textAlign: "center",
+  },
   statsRow: {
     flexDirection: "row",
     justifyContent: "space-between",

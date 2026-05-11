@@ -31,6 +31,7 @@ const mapUser = (user) => ({
 });
 
 export const register = async (req, res) => {
+  try {
   const {
     email,
     password,
@@ -89,39 +90,66 @@ export const register = async (req, res) => {
 
   const token = signToken(created.id);
   return res.status(201).json({ token, user: mapUser(created) });
+  } catch (err) {
+    console.error("[auth] register", err);
+    return res.status(500).json({
+      message:
+        err?.message?.includes("connect") || err?.code === "ECONNREFUSED"
+          ? "Database unavailable. Check DB_HOST / DB_NAME and that MariaDB is running."
+          : "Registration failed. Please try again later.",
+    });
+  }
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { student: true, lecturer: true },
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = signToken(user.id);
+    return res.json({ token, user: mapUser(user) });
+  } catch (err) {
+    console.error("[auth] login", err);
+    return res.status(500).json({
+      message:
+        err?.message?.includes("connect") || err?.code === "ECONNREFUSED"
+          ? "Database unavailable. Check DB_HOST / DB_NAME and that MariaDB is running."
+          : "Login failed. Please try again later.",
+    });
   }
-
-  const user = await prisma.user.findUnique({
-    where: { email },
-    include: { student: true, lecturer: true },
-  });
-
-  if (!user) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-
-  const isValid = await bcrypt.compare(password, user.passwordHash);
-  if (!isValid) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-
-  const token = signToken(user.id);
-  return res.json({ token, user: mapUser(user) });
 };
 
 export const me = async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.id },
-    include: {
-      student: { include: { department: true } },
-      lecturer: { include: { department: true } },
-    },
-  });
-  return res.json({ user: mapUser(user) });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: {
+        student: { include: { department: true } },
+        lecturer: { include: { department: true } },
+      },
+    });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.json({ user: mapUser(user) });
+  } catch (err) {
+    console.error("[auth] me", err);
+    return res.status(500).json({ message: "Could not load profile." });
+  }
 };

@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect } from "react";
-import { ScrollView, StyleSheet, Animated } from "react-native";
+import { ScrollView, StyleSheet, Animated, View } from "react-native";
 import { useSelector } from "react-redux";
 import staticTexts from "../../staticText.json";
 import { rS } from "../../Styles/responsive";
@@ -8,6 +8,8 @@ import BigBox from "../../Components/Other/BigBox";
 import SmallBox from "../../Components/Other/SmallBox";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import PageHeader from "../../Components/ui/PageHeader";
+import { toDashboardUser } from "../../utils/dashboardUser";
 
 const Dashboard = () => {
   useScreenPerformance("Dashboard Screen");
@@ -19,16 +21,7 @@ const Dashboard = () => {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
-  const dashboardUser = {
-    id: String(userData?.id || userData?.student?.id || "--"),
-    grade: userData?.student?.yearLevel ? String(userData.student.yearLevel) : "--",
-    semester: "--",
-    gpa: "--",
-    name:
-      userData?.name ||
-      `${userData?.firstName || ""} ${userData?.lastName || ""}`.trim() ||
-      "User",
-  };
+  const dashboardUser = toDashboardUser(userData);
   const boxes = [
     {
       title: "Assignments",
@@ -49,13 +42,6 @@ const Dashboard = () => {
       screen: "MoreInfo",
       color: theme.specialBoxes.schedule,
       icon: "schedule",
-      guestAvailable: false,
-    },
-    {
-      title: "Grades",
-      screen: "MoreInfo",
-      color: theme.specialBoxes.grades,
-      icon: "grading",
       guestAvailable: false,
     },
     {
@@ -119,6 +105,17 @@ const Dashboard = () => {
       style={[styles.scrollContainer, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.container}
     >
+      <View style={styles.headerBlock}>
+        <PageHeader
+          title="Dashboard"
+          subtitle={
+            userRole === "guest"
+              ? "Browse departments and news as a guest."
+              : "Your shortcuts and overview for the term."
+          }
+          theme={theme}
+        />
+      </View>
       <BigBox
         fadeAnim={fadeAnim}
         scale={scale}
@@ -149,6 +146,11 @@ export default Dashboard;
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
+  },
+  headerBlock: {
+    width: "100%",
+    paddingHorizontal: rS(4),
+    marginBottom: rS(8),
   },
   container: {
     padding: rS(12),

@@ -3,7 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-nat
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { mS, rS } from "../../Styles/responsive";
-import { studentApi } from "../../services/api";
+import { studentApi, getApiErrorMessage } from "../../services/api";
 
 export default function StudentAssignments() {
   const mode = useSelector((s) => s.theme.mode);
@@ -20,9 +20,8 @@ export default function StudentAssignments() {
         const response = await studentApi.assignments();
         setAssignments(response.data || []);
       } catch (apiError) {
-        setError(
-          apiError?.response?.data?.message || "Failed to load assignments.",
-        );
+        setAssignments([]);
+        setError(getApiErrorMessage(apiError, "Failed to load assignments."));
       } finally {
         setLoading(false);
       }

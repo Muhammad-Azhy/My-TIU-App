@@ -1,36 +1,31 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { guestApi, adminApi } from "../../../services/api.js";
+import { getApiErrorMessage } from "../../../utils/apiErrors.js";
 
-// Fetch news by ID
 export const fetchNews = createAsyncThunk(
   "news/fetchNews",
-  async (id, thunkAPI) => {
+  async (_, thunkAPI) => {
     try {
-      const res = await fetch(`https://api.example.com/news/${id}`);
-      if (!res.ok) throw new Error("Failed to fetch news");
-      const data = await res.json();
-      return data;
+      const res = await guestApi.news();
+      return Array.isArray(res.data) ? res.data : [];
     } catch (err) {
-      return thunkAPI.rejectWithValue(err.message);
+      return thunkAPI.rejectWithValue(
+        getApiErrorMessage(err, "Failed to fetch news"),
+      );
     }
-  }
+  },
 );
 
-// Create a news item
 export const createNews = createAsyncThunk(
   "news/createNews",
   async (newsData, thunkAPI) => {
     try {
-      const res = await fetch(`https://api.example.com/news`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newsData),
-      });
-
-      if (!res.ok) throw new Error("Failed to create news");
-      const data = await res.json();
-      return data;
+      const res = await adminApi.createNews(newsData);
+      return res.data;
     } catch (err) {
-      return thunkAPI.rejectWithValue(err.message);
+      return thunkAPI.rejectWithValue(
+        getApiErrorMessage(err, "Failed to create news"),
+      );
     }
-  }
+  },
 );
