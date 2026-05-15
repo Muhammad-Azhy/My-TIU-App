@@ -5,27 +5,62 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { mS, rS, vS } from "../../Styles/responsive";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useDispatch } from "react-redux";
-import { setRole } from "../../Redux/Slices/User/userSlice";
+import { setUser, setAuthLoading, setAuthError } from "../../Redux/Slices/User/userSlice";
 import useTheme from "../../Hooks/useTheme";
+import { authApi, setApiToken, getApiErrorMessage } from "../../services/api";
+import { saveAuth } from "../../services/authStorage";
+import { extractAuthPayload } from "../../utils/authPayload";
 
-const Login = ({ onLogin, onSkip }) => {
+const TLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const theme = useTheme();
 
-  const handleLogin = () => {
-    let role = "guest";
-    if (email.endsWith("@std.tiu.edu.iq")) role = "student";
-    else if (email.endsWith("@tiu.edu.iq")) role = "lecturer";
-    else if (email.endsWith("@admin.tiu.edu.iq")) role = "admin";
-
-    dispatch(setRole(role));
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError("Email and password are required.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    dispatch(setAuthLoading(true));
+    try {
+      const response = await authApi.login({
+        email: email.trim(),
+        password,
+      });
+      const payload = extractAuthPayload(response?.data);
+      if (!payload?.token || !payload?.user) {
+        const msg = "Unexpected response from server. Check API version.";
+        setError(msg);
+        dispatch(setAuthError(msg));
+        return;
+      }
+      if (!payload.user.role) {
+        const msg = "Account has no role assigned. Contact support.";
+        setError(msg);
+        dispatch(setAuthError(msg));
+        return;
+      }
+      setApiToken(payload.token);
+      await saveAuth({ token: payload.token, user: payload.user });
+      dispatch(setUser({ token: payload.token, user: payload.user }));
+    } catch (apiError) {
+      const message = getApiErrorMessage(apiError, "Login failed. Try again.");
+      setError(message);
+      dispatch(setAuthError(message));
+    } finally {
+      setLoading(false);
+      dispatch(setAuthLoading(false));
+    }
   };
 
   return (
@@ -42,6 +77,7 @@ const Login = ({ onLogin, onSkip }) => {
               fontSize: mS(20),
               textAlign: "center",
               color: theme.textSec,
+              fontWeight: "700",
             }}
           >
             TLogin
@@ -53,6 +89,7 @@ const Login = ({ onLogin, onSkip }) => {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            editable={!loading}
             style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
           />
           <TextInput
@@ -61,11 +98,20 @@ const Login = ({ onLogin, onSkip }) => {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            editable={!loading}
             style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          <TouchableOpacity style={[styles.button, { backgroundColor: theme.primary }]} onPress={handleLogin}>
-            <Text style={{ color: theme.text, fontWeight: "bold" }}>Enter</Text>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: theme.primary }, loading && { opacity: 0.7 }]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={theme.text} size="small" />
+            ) : (
+              <Text style={{ color: theme.text, fontWeight: "bold" }}>Enter</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -73,7 +119,7 @@ const Login = ({ onLogin, onSkip }) => {
   );
 };
 
-export default Login;
+export default TLogin;
 
 const styles = StyleSheet.create({
   button: {
@@ -82,17 +128,13 @@ const styles = StyleSheet.create({
     width: rS(190),
     alignSelf: "center",
     alignItems: "center",
+    minHeight: 44,
+    justifyContent: "center",
   },
   loginContainer: {
     flex: 1,
     padding: mS(30),
     justifyContent: "center",
-  },
-  loginTitle: {
-    fontSize: mS(24),
-    marginBottom: mS(40),
-    textAlign: "center",
-    fontWeight: "bold",
   },
   input: {
     borderWidth: 1,
@@ -101,7 +143,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   inputContainer: {
-    height: rS(350),
     marginBottom: mS(20),
     gap: mS(5),
     padding: mS(20),
@@ -112,5 +153,6 @@ const styles = StyleSheet.create({
     color: "#ff1900ff",
     marginBottom: mS(15),
     textAlign: "center",
+    fontSize: mS(13),
   },
 });

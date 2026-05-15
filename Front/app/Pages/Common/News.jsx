@@ -63,7 +63,6 @@ export default function News() {
   const [carouselWidth, setCarouselWidth] = useState(windowWidth);
   const carouselRef = useRef(null);
   const autoTimer = useRef(null);
-  const isAutoScrolling = useRef(false);
 
   const mode = useSelector((state) => state.theme.mode);
   const theme = mode === "dark" ? darkTheme : lightTheme;
@@ -91,46 +90,50 @@ export default function News() {
     fetchNews();
   }, []);
 
-  const startAutoTimer = useCallback(() => {
-    if (autoTimer.current) clearInterval(autoTimer.current);
-    if (featured.length <= 1) return;
-    autoTimer.current = setInterval(() => {
-      isAutoScrolling.current = true;
-      setSlideIndex((prev) => {
-        const next = (prev + 1) % featured.length;
-        if (carouselRef.current) {
-          carouselRef.current.scrollTo({
-            x: next * carouselWidth,
-            animated: true,
-          });
-        }
-        return next;
-      });
-    }, 6500);
-  }, [featured.length, carouselWidth]);
-
-  const onCarouselScrollEnd = useCallback(
-    (e) => {
-      const x = e.nativeEvent.contentOffset.x;
-      const w = e.nativeEvent.layoutMeasurement.width || carouselWidth;
-      const i = Math.round(x / Math.max(w, 1));
-      const clamped = Math.max(0, Math.min(i, Math.max(featured.length - 1, 0)));
-      if (isAutoScrolling.current) {
-        isAutoScrolling.current = false;
-        return;
-      }
-      setSlideIndex(clamped);
-      startAutoTimer();
+  // ── Auto-scroll timer ─────────────────────────────────────────────
+  const startAutoTimer = useCallback(
+    (featuredLen, width) => {
+      if (autoTimer.current) clearInterval(autoTimer.current);
+      if (featuredLen <= 1) return;
+      autoTimer.current = setInterval(() => {
+        setSlideIndex((prev) => {
+          const next = (prev + 1) % featuredLen;
+          if (carouselRef.current) {
+            carouselRef.current.scrollTo({ x: next * width, animated: true });
+          }
+          return next;
+        });
+      }, 6500);
     },
-    [carouselWidth, featured.length, startAutoTimer],
+    [],
   );
 
   useEffect(() => {
-    startAutoTimer();
+    startAutoTimer(featured.length, carouselWidth);
     return () => {
       if (autoTimer.current) clearInterval(autoTimer.current);
     };
-  }, [startAutoTimer]);
+  }, [featured.length, carouselWidth, startAutoTimer]);
+
+  // ── Dot sync via onScroll (continuous, works for both manual & auto) ──
+  const onCarouselScroll = useCallback(
+    (e) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const w = carouselWidth || windowWidth || 1;
+      const i = Math.round(x / w);
+      const clamped = Math.max(0, Math.min(i, featured.length - 1));
+      setSlideIndex(clamped);
+    },
+    [carouselWidth, featured.length, windowWidth],
+  );
+
+  // ── Restart timer after a manual swipe ───────────────────────────
+  const onCarouselScrollEnd = useCallback(
+    (e) => {
+      startAutoTimer(featured.length, carouselWidth);
+    },
+    [featured.length, carouselWidth, startAutoTimer],
+  );
 
   const renderFeedItem = useCallback(
     ({ item }) => (
@@ -146,7 +149,8 @@ export default function News() {
     [theme],
   );
 
-  const carouselSection = useMemo(() => {
+  // ── Carousel section (no useMemo so slideIndex is always current) ──
+  const renderCarousel = () => {
     if (loading) {
       return (
         <View style={styles.skeletonBlock}>
@@ -182,7 +186,9 @@ export default function News() {
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
           onLayout={(e) => setCarouselWidth(e.nativeEvent.layout.width || windowWidth)}
+          onScroll={onCarouselScroll}
           onMomentumScrollEnd={onCarouselScrollEnd}
           decelerationRate="fast"
         >
@@ -190,22 +196,26 @@ export default function News() {
             <FeaturedSlide key={item.id} item={item} theme={theme} slideWidth={carouselWidth} />
           ))}
         </ScrollView>
+        {/* Dots */}
         <View style={styles.dotsRow}>
           {featured.map((_, i) => (
-            <Pressable key={String(i)} onPress={() => {
+            <Pressable
+              key={String(i)}
+              onPress={() => {
                 setSlideIndex(i);
                 if (carouselRef.current) {
                   carouselRef.current.scrollTo({ x: i * carouselWidth, animated: true });
                 }
-                startAutoTimer();
-              }} hitSlop={8}>
+                startAutoTimer(featured.length, carouselWidth);
+              }}
+              hitSlop={8}
+            >
               <View
                 style={[
                   styles.dot,
-                  {
-                    backgroundColor:
-                      i === slideIndex ? theme.primary : theme.border,
-                  },
+                  i === slideIndex
+                    ? { backgroundColor: theme.primary, width: 18, borderRadius: 4 }
+                    : { backgroundColor: theme.border },
                 ]}
               />
             </Pressable>
@@ -213,7 +223,7 @@ export default function News() {
         </View>
       </View>
     );
-  }, [loading, error, featured, theme, carouselWidth, onCarouselScrollEnd, slideIndex, startAutoTimer]);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -236,7 +246,7 @@ export default function News() {
                 theme={theme}
               />
             </View>
-            <View style={styles.carouselBleed}>{carouselSection}</View>
+            <View style={styles.carouselBleed}>{renderCarousel()}</View>
             {!loading && !error && feed.length > 0 ? (
               <Text style={[styles.sectionLabel, { color: theme.subText, marginBottom: vS(8) }]}>
                 All stories
@@ -334,13 +344,14 @@ const styles = StyleSheet.create({
   dotsRow: {
     flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
     marginTop: vS(10),
+    gap: 6,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginHorizontal: 4,
   },
   bannerErr: {
     textAlign: "center",

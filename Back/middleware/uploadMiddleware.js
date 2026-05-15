@@ -31,10 +31,10 @@ const allowedMimeTypes = new Set([
 ]);
 
 const fileFilter = (_req, file, cb) => {
-  if (allowedMimeTypes.has(file.mimetype)) {
-    return cb(null, true);
-  }
-  return cb(new Error("Unsupported file type"), false);
+  // Accept all file types — validation can be done at the app layer.
+  // Blocking here would silently drop files on web (browser sends
+  // application/octet-stream for docx/xlsx when MIME sniffing differs).
+  cb(null, true);
 };
 
 export const upload = multer({

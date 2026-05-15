@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS } from "../../Styles/responsive";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
+import BackBar from "../../Components/ui/BackBar";
 
 function Row({ label, value, theme }) {
   return (
@@ -31,7 +32,7 @@ export default function StudentProfile() {
       style={[styles.screen, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.heading, { color: theme.text }]}>Profile</Text>
+      <BackBar title="Profile" />
       <View style={[styles.card, { backgroundColor: theme.card }]}>
         <Row label="Name" value={fullName} theme={theme} />
         <Row

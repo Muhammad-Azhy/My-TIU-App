@@ -27,10 +27,13 @@ const BigBox = ({ fadeAnim, scale, randomText, userRole, user, theme }) => {
           {randomText}
         </Animated.Text>
       </View>
-      <Image
-        source={isGuest ? NoProfilePhoto : ProfilePhoto}
-        style={styles.profilePhoto}
-      />
+      <View style={styles.photoContainer}>
+        <Image
+          source={isGuest ? NoProfilePhoto : ProfilePhoto}
+          style={styles.profilePhoto}
+          resizeMode="cover"
+        />
+      </View>
       <Text style={[styles.profileName, { color: theme.textSec }]}>
         {isGuest ? "Hello, Guest" : `Hello, ${user.name}`}
       </Text>
@@ -76,11 +79,18 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     position: "relative",
   },
-  profilePhoto: {
-    width: rS(130),
-    height: vS(100),
-    borderRadius: rS(10),
+  photoContainer: {
+    width: rS(90),
+    height: rS(90),
+    borderRadius: rS(45),
     marginBottom: rS(10),
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.30)",
+  },
+  profilePhoto: {
+    width: rS(90),
+    height: rS(90),
   },
   profileName: { fontSize: rS(20), fontWeight: "bold" },
   profileId: { fontSize: rS(18), marginTop: rS(4) },

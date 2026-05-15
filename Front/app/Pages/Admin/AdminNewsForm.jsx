@@ -13,6 +13,7 @@ import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS, vS } from "../../Styles/responsive";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
 import { adminApi, guestApi } from "../../services/api";
+import BackBar from "../../Components/ui/BackBar";
 
 export default function AdminNewsForm({ navigation, route }) {
   useScreenPerformance("Admin News Form Screen");
@@ -87,9 +88,7 @@ export default function AdminNewsForm({ navigation, route }) {
       enableOnAndroid
       extraScrollHeight={vS(24)}
     >
-      <Text style={[styles.heading, { color: theme.text }]}>
-        {existing ? "Edit news" : "New news"}
-      </Text>
+      <BackBar title={existing ? "Edit News" : "New News"} />
 
       <Text style={[styles.label, { color: theme.subText }]}>Title</Text>
       <TextInput

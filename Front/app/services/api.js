@@ -122,7 +122,7 @@ export const lecturerApi = {
 
 export const studentApi = {
   classes: () => api.get("/student/classes"),
-  assignments: () => api.get("/student/assignments"),
+  assignments: () => api.get(`/student/assignments?_t=${Date.now()}`),
   grades: () => api.get("/student/grades"),
   profile: () => api.get("/student/profile"),
 };

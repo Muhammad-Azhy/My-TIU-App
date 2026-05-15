@@ -6,6 +6,7 @@ import ListCard from "../../Components/lists/ListCard";
 import { rS, mS } from "../../Styles/responsive";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
 import { adminApi } from "../../services/api";
+import BackBar from "../../Components/ui/BackBar";
 
 export default function AdminUsersList({ navigation }) {
   useScreenPerformance("Admin Users List Screen");
@@ -41,9 +42,7 @@ export default function AdminUsersList({ navigation }) {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <Text style={[styles.heading, { color: theme.text }]}>
-        User directory
-      </Text>
+      <BackBar title="User Directory" />
       <Text style={[styles.hint, { color: theme.subText }]}>
         Users from the live backend.
       </Text>

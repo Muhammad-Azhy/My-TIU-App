@@ -5,6 +5,7 @@ import { darkTheme, lightTheme } from "../../Styles/theme";
 import ListCard from "../../Components/lists/ListCard";
 import { rS, mS } from "../../Styles/responsive";
 import { guestApi, getApiErrorMessage } from "../../services/api";
+import BackBar from "../../Components/ui/BackBar";
 
 export default function StudentAnnouncements({ navigation }) {
   const mode = useSelector((s) => s.theme.mode);
@@ -34,7 +35,7 @@ export default function StudentAnnouncements({ navigation }) {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.background }]}>
-      <Text style={[styles.heading, { color: theme.text }]}>Announcements</Text>
+      <BackBar title="Announcements" />
       {loading ? <ActivityIndicator size="large" color={theme.primary} /> : null}
       {error ? (
         <Text style={{ color: "#d14343", paddingHorizontal: rS(16), marginBottom: rS(8) }}>
@@ -56,6 +57,7 @@ export default function StudentAnnouncements({ navigation }) {
                 title: item.title,
                 body: item.content,
                 date: new Date(item.createdAt).toLocaleDateString(),
+                files: item.files || [],
               })
             }
           />

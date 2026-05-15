@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -14,6 +15,7 @@ import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS, vS } from "../../Styles/responsive";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
 import { lecturerApi } from "../../services/api";
+import BackBar from "../../Components/ui/BackBar";
 
 export default function InstructorPostAnnouncement({ navigation }) {
   useScreenPerformance("Instructor Post Announcement Screen");
@@ -26,12 +28,7 @@ export default function InstructorPostAnnouncement({ navigation }) {
 
   const pickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({
-      type: [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "image/*",
-      ],
+      type: "*/*",
       copyToCacheDirectory: true,
       multiple: false,
     });
@@ -50,11 +47,21 @@ export default function InstructorPostAnnouncement({ navigation }) {
       formData.append("title", title.trim());
       formData.append("content", content.trim());
       if (pickedFile) {
-        formData.append("file", {
-          uri: pickedFile.uri,
-          name: pickedFile.name || `announcement-${Date.now()}.pdf`,
-          type: pickedFile.mimeType || "application/octet-stream",
-        });
+        if (Platform.OS === "web") {
+          const resp = await fetch(pickedFile.uri);
+          const blob = await resp.blob();
+          const fileName = pickedFile.name || `announcement-${Date.now()}`;
+          const file = new File([blob], fileName, {
+            type: pickedFile.mimeType || blob.type || "application/octet-stream",
+          });
+          formData.append("file", file);
+        } else {
+          formData.append("file", {
+            uri: pickedFile.uri,
+            name: pickedFile.name || `announcement-${Date.now()}.pdf`,
+            type: pickedFile.mimeType || "application/octet-stream",
+          });
+        }
       }
       await lecturerApi.createAnnouncement(formData);
       Alert.alert("Success", "Announcement published.");
@@ -77,9 +84,7 @@ export default function InstructorPostAnnouncement({ navigation }) {
       enableOnAndroid
       extraScrollHeight={vS(24)}
     >
-      <Text style={[styles.heading, { color: theme.text }]}>
-        New announcement
-      </Text>
+      <BackBar title="New Announcement" />
       <Text style={[styles.hint, { color: theme.subText }]}>
         Publish announcements for your students.
       </Text>

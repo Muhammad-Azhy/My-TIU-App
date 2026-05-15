@@ -14,6 +14,7 @@ import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { rS, mS, vS } from "../../Styles/responsive";
 import useTheme from "../../Hooks/useTheme";
+import BackBar from "../../Components/ui/BackBar";
 
 export default function DepartmentDetails({ route }) {
   const { dept } = route.params;
@@ -34,6 +35,7 @@ export default function DepartmentDetails({ route }) {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <BackBar title={dept.name} />
       {/* Header */}
       <View style={[styles.header, { backgroundColor: deptColor }]}>
         <MaterialIcons name={dept.icon} size={mS(50)} color="#fff" />

@@ -31,6 +31,7 @@ export const listMyAssignments = async (req, res) => {
     include: { classOffering: { include: { course: true } }, files: true },
     orderBy: { createdAt: "desc" },
   });
+  res.setHeader("Cache-Control", "no-store");
   res.json(assignments);
 };
 

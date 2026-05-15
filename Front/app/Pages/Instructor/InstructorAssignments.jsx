@@ -9,10 +9,12 @@ import {
   View,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
+import { Platform } from "react-native";
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { mS, rS } from "../../Styles/responsive";
 import { lecturerApi } from "../../services/api";
+import BackBar from "../../Components/ui/BackBar";
 
 export default function InstructorAssignments() {
   const mode = useSelector((s) => s.theme.mode);
@@ -54,12 +56,7 @@ export default function InstructorAssignments() {
 
   const pickFile = async () => {
     const result = await DocumentPicker.getDocumentAsync({
-      type: [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "image/*",
-      ],
+      type: "*/*",
       copyToCacheDirectory: true,
       multiple: false,
     });
@@ -84,11 +81,23 @@ export default function InstructorAssignments() {
       formData.append("dueDate", dueDate.trim());
 
       if (pickedFile) {
-        formData.append("file", {
-          uri: pickedFile.uri,
-          name: pickedFile.name || `assignment-${Date.now()}.pdf`,
-          type: pickedFile.mimeType || "application/octet-stream",
-        });
+        if (Platform.OS === "web") {
+          // On web, pickedFile.uri is a blob: URL or data: URL.
+          // We must fetch it and append a real Blob/File for multer to parse.
+          const resp = await fetch(pickedFile.uri);
+          const blob = await resp.blob();
+          const fileName = pickedFile.name || `assignment-${Date.now()}`;
+          const file = new File([blob], fileName, {
+            type: pickedFile.mimeType || blob.type || "application/octet-stream",
+          });
+          formData.append("file", file);
+        } else {
+          formData.append("file", {
+            uri: pickedFile.uri,
+            name: pickedFile.name || `assignment-${Date.now()}.pdf`,
+            type: pickedFile.mimeType || "application/octet-stream",
+          });
+        }
       }
 
       await lecturerApi.createAssignment(formData);
@@ -112,7 +121,7 @@ export default function InstructorAssignments() {
       style={[styles.screen, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.title, { color: theme.text }]}>Assignments</Text>
+      <BackBar title="Assignments" />
 
       {loading ? (
         <ActivityIndicator size="large" color={theme.primary} />

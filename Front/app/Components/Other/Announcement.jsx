@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    height: vS(200),
-    borderRadius: rS(10),
+    aspectRatio: 16 / 9,
+    borderRadius: rS(12),
     marginVertical: vS(8),
     resizeMode: "cover",
   },

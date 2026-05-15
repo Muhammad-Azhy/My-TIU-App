@@ -14,6 +14,7 @@ import studentRoutes from "./routes/studentRoutes.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+app.set("etag", false); // Disable ETags so API never returns 304 stale data
 const PORT = Number(process.env.PORT || 3000);
 
 const missingDbEnv = ["DB_HOST", "DB_USER", "DB_NAME"].filter(

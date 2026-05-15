@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS } from "../../Styles/responsive";
+import BackBar from "../../Components/ui/BackBar";
 
 function Row({ label, value, theme }) {
   return (
@@ -23,7 +24,7 @@ export default function AdminUserDetail({ route }) {
       style={[styles.screen, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.heading, { color: theme.text }]}>User</Text>
+      <BackBar title="User Detail" />
       <View style={[styles.card, { backgroundColor: theme.card }]}>
         <Row label="Name" value={user?.name} theme={theme} />
         <Row label="Email" value={user?.email} theme={theme} />
