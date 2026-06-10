@@ -1,0 +1,26 @@
+{
+  "User": {
+    "SET_USER": "SET_USER",
+    "CLEAR_USER": "CLEAR_USER",
+    "SET_ROLE": "SET_ROLE",
+    "LOGIN": "LOGIN",
+    "LOGOUT": "LOGOUT"
+  },
+  "Student": {
+    "GET_INFO": "GET_INFO",
+    "SEND_MSG": "SEND_MSG",
+    "EDIT_MSG": "EDIT_MSG",
+    "DELETE_MSG": "DELETE_MSG",
+    "LIKE_MSG": "LIKE_MSG",
+    "DISLIKE_MSG": "DISLIKE_MSG",
+    "JOIN_CLASS": "JOIN_CLASS",
+    "LEAVE_CLASS": "LEAVE_CLASS"
+  },
+  "Announcement": {
+    "SET_ANNOUNCEMENTS": "SET_ANNOUNCEMENTS",
+    "ADD_ANNOUNCEMENT": "ADD_ANNOUNCEMENT"
+  },
+  "Settings": {
+    "TOGGLE_THEME": "TOGGLE_THEME"
+  }
+}

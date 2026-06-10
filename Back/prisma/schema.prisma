@@ -1,0 +1,222 @@
+// Prisma schema for University Management System
+// Improvements applied: security, relations, timestamps, enums, indexes, cascade rules
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  GUEST
+  STUDENT
+  LECTURER
+  ADMIN
+}
+
+enum LecturerRank {
+  ASSISTANT
+  LECTURER
+  HEAD_OF_DEPARTMENT
+}
+
+enum FileRelationType {
+  ASSIGNMENT
+  ANNOUNCEMENT
+  NEWS
+  SUBMISSION
+  PROFILE
+  OTHER
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          Role
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  student       Student?
+  lecturer      Lecturer?
+  newsPosts     News[]            @relation("NewsAuthor")
+  announcements Announcement[]    @relation("AnnouncementAuthor")
+  uploadedFiles FileUpload[]      @relation("FileUploader")
+}
+
+model Student {
+  id             Int          @id @default(autoincrement())
+  userId         Int          @unique
+  studentNumber  String       @unique
+  yearLevel      Int?
+  departmentId   Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  enrollments    Enrollment[]
+  grades         Grade[]
+}
+
+model Lecturer {
+  id            Int          @id @default(autoincrement())
+  userId        Int          @unique
+  employeeId    String       @unique
+  rank          LecturerRank @default(LECTURER)
+  departmentId  Int?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department    Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  classOfferings ClassOffering[]
+  assignments   Assignment[]
+}
+
+model Department {
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  code          String         @unique
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  students      Student[]
+  lecturers     Lecturer[]
+  courses       Course[]
+  news          News[]
+  announcements Announcement[]
+}
+
+model Course {
+  id            Int            @id @default(autoincrement())
+  code          String         @unique
+  title         String
+  description   String?
+  creditHours   Int            @default(3)
+  departmentId  Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  department    Department     @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  classes       ClassOffering[]
+}
+
+model ClassOffering {
+  id            Int            @id @default(autoincrement())
+  courseId      Int
+  lecturerId    Int?
+  semester      String
+  section       String
+  room          String?
+  schedule      String?
+  capacity      Int            @default(40)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  course        Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  lecturer      Lecturer?      @relation(fields: [lecturerId], references: [id], onDelete: SetNull)
+  enrollments   Enrollment[]
+  assignments   Assignment[]
+}
+
+model Enrollment {
+  id            Int            @id @default(autoincrement())
+  studentId     Int
+  classId       Int
+  enrolledAt    DateTime       @default(now())
+
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classOffering ClassOffering  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  grades        Grade[]
+
+  @@unique([studentId, classId])
+}
+
+model Assignment {
+  id            Int            @id @default(autoincrement())
+  classId       Int
+  lecturerId    Int
+  title         String
+  description   String?
+  dueDate       DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  classOffering ClassOffering  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  lecturer      Lecturer       @relation(fields: [lecturerId], references: [id], onDelete: Restrict)
+  grades        Grade[]
+  files         FileUpload[]
+}
+
+model Grade {
+  id            Int            @id @default(autoincrement())
+  assignmentId  Int
+  enrollmentId  Int
+  studentId     Int
+  score         Decimal        @db.Decimal(5, 2)
+  feedback      String?
+  gradedAt      DateTime       @default(now())
+  gradedById    Int?
+
+  assignment    Assignment     @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  enrollment    Enrollment     @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  student       Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, enrollmentId])
+}
+
+model News {
+  id            Int            @id @default(autoincrement())
+  title         String
+  content       String
+  authorId      Int
+  departmentId  Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  author        User           @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  department    Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  files         FileUpload[]
+}
+
+model Announcement {
+  id            Int            @id @default(autoincrement())
+  title         String
+  content       String
+  authorId      Int
+  departmentId  Int?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  author        User           @relation("AnnouncementAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  department    Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  files         FileUpload[]
+}
+
+model FileUpload {
+  id              Int               @id @default(autoincrement())
+  originalName    String
+  storedName      String
+  path            String
+  mimeType        String
+  extension       String?
+  size            Int
+  relationType    FileRelationType
+  relationId      Int?
+  uploadedById    Int?
+  assignmentId    Int?
+  announcementId  Int?
+  newsId          Int?
+  createdAt       DateTime          @default(now())
+
+  uploadedBy      User?             @relation("FileUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  assignment      Assignment?       @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  announcement    Announcement?     @relation(fields: [announcementId], references: [id], onDelete: SetNull)
+  news            News?             @relation(fields: [newsId], references: [id], onDelete: SetNull)
+}
