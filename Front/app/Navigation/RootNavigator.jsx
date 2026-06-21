@@ -18,6 +18,7 @@ import { mS } from "../Styles/responsive";
 import DepartmentDetails from "../Pages/Guests/DepartmentDetails";
 import Settings from "../Pages/Common/Settings";
 import StudentProfile from "../Pages/Students/StudentProfile";
+import Notifications from "../Pages/Common/Notifications";
 import { stackFadeOptions, stackSlideOptions } from "./transitions";
 
 const Stack = createNativeStackNavigator();
@@ -131,6 +132,11 @@ function StudentStack({ userRole }) {
       }}
     >
       <Stack.Screen name="StudentTabs" component={StudentNavigator} />
+      <Stack.Screen
+        name="Notifications"
+        component={Notifications}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }
@@ -143,6 +149,11 @@ function InstructorStack({ userRole }) {
       }}
     >
       <Stack.Screen name="InstructorTabs" component={InstructorNavigator} />
+      <Stack.Screen
+        name="Notifications"
+        component={Notifications}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }
@@ -155,6 +166,11 @@ function AdminStack({ userRole }) {
       }}
     >
       <Stack.Screen name="AdminTabs" component={AdminNavigator} />
+      <Stack.Screen
+        name="Notifications"
+        component={Notifications}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }

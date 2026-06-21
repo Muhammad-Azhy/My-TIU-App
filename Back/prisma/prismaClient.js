@@ -8,7 +8,14 @@ const adapter = new PrismaMariaDb({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  connectTimeout: 10_000,
+  allowPublicKeyRetrieval: true,
+  connectionLimit: 10,
 });
 const prisma = new PrismaClient({ adapter });
+
+export async function verifyDatabaseConnection() {
+  await prisma.$queryRaw`SELECT 1`;
+}
 
 export default prisma;

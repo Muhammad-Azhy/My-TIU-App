@@ -18,6 +18,7 @@ import {
   setAuthLoading,
   setUser,
 } from "../../Redux/Slices/User/userSlice";
+import { fetchUserProfile } from "../../Redux/Slices/User/userAction";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
 import { authApi, setApiToken, getApiErrorMessage } from "../../services/api";
 import { clearAuth, saveAuth } from "../../services/authStorage";
@@ -64,6 +65,9 @@ const Login = () => {
       setApiToken(payload.token);
       await saveAuth({ token: payload.token, user: payload.user });
       dispatch(setUser({ token: payload.token, user: payload.user }));
+
+      // Fetch enriched profile immediately (department, gpa, semester)
+      dispatch(fetchUserProfile());
     } catch (apiError) {
       const message = getApiErrorMessage(apiError, "Login failed. Try again.");
       setError(message);

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { darkTheme, lightTheme } from "../../Styles/theme";
 import { rS, mS, vS } from "../../Styles/responsive";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import BackBar from "../../Components/ui/BackBar";
-import { getUploadsBaseUrl } from "../../services/api";
+import { getUploadsBaseUrl, studentApi } from "../../services/api";
 
 const UPLOADS_BASE = getUploadsBaseUrl();
 
@@ -72,11 +72,22 @@ function FileItem({ file, theme }) {
 }
 
 export default function StudentAnnouncementDetail({ route }) {
-  const { title, body, date, files } = route.params || {};
+  const { announcementId, title, body, date, files } = route.params || {};
   const mode = useSelector((s) => s.theme.mode);
   const theme = mode === "dark" ? darkTheme : lightTheme;
 
   const attachments = Array.isArray(files) ? files : [];
+
+  // Record view when this screen is opened
+  useEffect(() => {
+    if (announcementId) {
+      studentApi
+        .recordView({ contentType: "announcement", contentId: announcementId })
+        .catch((err) => {
+          if (__DEV__) console.warn("[View] Failed to record announcement view:", err?.message);
+        });
+    }
+  }, [announcementId]);
 
   return (
     <ScrollView

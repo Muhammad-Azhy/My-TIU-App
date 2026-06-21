@@ -31,6 +31,15 @@ enum FileRelationType {
   OTHER
 }
 
+enum NotificationType {
+  ASSIGNMENT
+  ANNOUNCEMENT
+  GRADE
+  NEWS
+  ENROLLMENT
+  CLASS_ASSIGNMENT
+}
+
 model User {
   id            Int       @id @default(autoincrement())
   email         String    @unique
@@ -47,6 +56,9 @@ model User {
   newsPosts     News[]            @relation("NewsAuthor")
   announcements Announcement[]    @relation("AnnouncementAuthor")
   uploadedFiles FileUpload[]      @relation("FileUploader")
+  notifications Notification[]
+  deviceTokens  DeviceToken[]
+  contentViews  ContentView[]
 }
 
 model Student {
@@ -54,6 +66,8 @@ model Student {
   userId         Int          @unique
   studentNumber  String       @unique
   yearLevel      Int?
+  gpa            Decimal?     @db.Decimal(3, 2)
+  currentSemester String?
   departmentId   Int?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -62,6 +76,7 @@ model Student {
   department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   enrollments    Enrollment[]
   grades         Grade[]
+  contentViews   ContentView[]
 }
 
 model Lecturer {
@@ -219,4 +234,50 @@ model FileUpload {
   assignment      Assignment?       @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
   announcement    Announcement?     @relation(fields: [announcementId], references: [id], onDelete: SetNull)
   news            News?             @relation(fields: [newsId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id         Int              @id @default(autoincrement())
+  userId     Int
+  type       NotificationType
+  title      String
+  body       String?
+  entityType String?
+  entityId   Int?
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+model DeviceToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @db.VarChar(512)
+  platform  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+  @@index([userId])
+}
+
+model ContentView {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  studentId   Int?
+  contentType String
+  contentId   Int
+  viewedAt    DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  student     Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentType, contentId])
+  @@index([contentType, contentId])
 }

@@ -17,6 +17,7 @@ import {
   updateNews,
   updateUser,
 } from "../controllers/adminController.js";
+import { getViewStats } from "../controllers/viewTrackingController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { requireAdminOrHead } from "../middleware/rbacMiddleware.js";
 
@@ -42,5 +43,8 @@ router.delete("/departments/:id", deleteDepartment);
 router.post("/news", createNews);
 router.patch("/news/:id", updateNews);
 router.delete("/news/:id", deleteNews);
+
+// View stats
+router.get("/view-stats/:contentType/:contentId", getViewStats);
 
 export default router;

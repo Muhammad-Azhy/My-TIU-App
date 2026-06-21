@@ -7,6 +7,7 @@ import {
   listMyAssignments,
   listMyClasses,
 } from "../controllers/lecturerController.js";
+import { getViewStats } from "../controllers/viewTrackingController.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { requireRoles } from "../middleware/rbacMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
@@ -20,5 +21,8 @@ router.post("/assignments", upload.single("file"), createAssignment);
 router.post("/announcements", upload.single("file"), createAnnouncement);
 router.post("/grades", gradeStudent);
 router.post("/assign-student", assignStudentToClassAsHead);
+
+// View stats
+router.get("/view-stats/:contentType/:contentId", getViewStats);
 
 export default router;

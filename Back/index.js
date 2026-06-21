@@ -11,6 +11,12 @@ import guestRoutes from "./routes/guestRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import lecturerRoutes from "./routes/lecturerRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import prisma, { verifyDatabaseConnection } from "./prisma/prismaClient.js";
+import { initializeFirebase } from "./services/fcmService.js";
+
+// Initialize Firebase Admin for push notifications (graceful if not configured)
+initializeFirebase();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,11 +50,26 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true, message: "MyTIU API is running" });
 });
 
+app.get("/api/health/db", async (_req, res) => {
+  try {
+    await verifyDatabaseConnection();
+    res.json({ ok: true, message: "Database connected" });
+  } catch (err) {
+    res.status(503).json({
+      ok: false,
+      message:
+        "Database unavailable. Check DB_HOST / DB_NAME / DB_PASSWORD and that MySQL or MariaDB is running.",
+      code: err?.cause?.code || err?.code || null,
+    });
+  }
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/guest", guestRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/lecturer", lecturerRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use((err, _req, res, _next) => {
   const status = err.status || 500;
@@ -75,8 +96,23 @@ function logLanAddresses() {
   }
 }
 
-app.listen(PORT, HOST, () => {
+app.listen(PORT, HOST, async () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
   console.log(`API health: http://localhost:${PORT}/api/health`);
   logLanAddresses();
+
+  try {
+    await verifyDatabaseConnection();
+    console.log(
+      `[MyTIU] Database OK (${process.env.DB_USER}@${process.env.DB_HOST}:${process.env.DB_PORT || 3306}/${process.env.DB_NAME})`,
+    );
+  } catch (err) {
+    console.error(
+      "[MyTIU] Database connection failed on startup:",
+      err?.cause?.message || err?.message || err,
+    );
+    console.error(
+      "[MyTIU] Fix Back/.env (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME) and ensure MySQL/MariaDB is running, then restart the server.",
+    );
+  }
 });

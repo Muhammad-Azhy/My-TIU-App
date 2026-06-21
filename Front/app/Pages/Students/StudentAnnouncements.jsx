@@ -54,6 +54,7 @@ export default function StudentAnnouncements({ navigation }) {
             theme={theme}
             onPress={() =>
               navigation.navigate("StudentAnnouncementDetail", {
+                announcementId: item.id,
                 title: item.title,
                 body: item.content,
                 date: new Date(item.createdAt).toLocaleDateString(),

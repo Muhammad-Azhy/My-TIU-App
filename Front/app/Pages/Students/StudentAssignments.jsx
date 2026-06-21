@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  TouchableOpacity,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { darkTheme, lightTheme } from "../../Styles/theme";
@@ -26,23 +27,29 @@ function formatDeadline(dueDate) {
   });
 }
 
-function AssignmentCard({ assignment, theme, index }) {
+function AssignmentCard({ assignment, theme, index, onView }) {
+  const handlePress = () => {
+    if (onView) onView(assignment.id);
+  };
+
   return (
     <FadeSlideIn delay={Math.min(index * 50, 300)}>
-      <AppCard theme={theme} style={styles.card}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>
-          {assignment.title}
-        </Text>
-        <Text style={[styles.description, { color: theme.text }]}>
-          {assignment.description?.trim() || "No description provided."}
-        </Text>
-        <View style={styles.deadlineRow}>
-          <Icon name="event" size={mS(15)} color={theme.primary} />
-          <Text style={[styles.deadline, { color: theme.subText }]}>
-            Deadline: {formatDeadline(assignment.dueDate)}
+      <TouchableOpacity activeOpacity={0.85} onPress={handlePress}>
+        <AppCard theme={theme} style={styles.card}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>
+            {assignment.title}
           </Text>
-        </View>
-      </AppCard>
+          <Text style={[styles.description, { color: theme.text }]}>
+            {assignment.description?.trim() || "No description provided."}
+          </Text>
+          <View style={styles.deadlineRow}>
+            <Icon name="event" size={mS(15)} color={theme.primary} />
+            <Text style={[styles.deadline, { color: theme.subText }]}>
+              Deadline: {formatDeadline(assignment.dueDate)}
+            </Text>
+          </View>
+        </AppCard>
+      </TouchableOpacity>
     </FadeSlideIn>
   );
 }
@@ -69,6 +76,15 @@ export default function StudentAssignments() {
       }
     };
     loadAssignments();
+  }, []);
+
+  // Record view when student taps an assignment
+  const handleViewAssignment = useCallback((assignmentId) => {
+    studentApi
+      .recordView({ contentType: "assignment", contentId: assignmentId })
+      .catch((err) => {
+        if (__DEV__) console.warn("[View] Failed to record assignment view:", err?.message);
+      });
   }, []);
 
   return (
@@ -118,6 +134,7 @@ export default function StudentAssignments() {
           assignment={a}
           theme={theme}
           index={index}
+          onView={handleViewAssignment}
         />
       ))}
     </ScrollView>
