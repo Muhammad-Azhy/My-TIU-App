@@ -1,25 +1,28 @@
-// IMPORTANT: dotenv must be loaded FIRST before any env var is read
 import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@prisma/client";
 
-// PrismaMariaDb is a factory — pass connection config directly
-// It creates and manages its own pool internally
 const adapter = new PrismaMariaDb({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME,
-  connectTimeout: 10_000,
-  connectionLimit: 10,
   prepareCacheLength: 0,
 });
 
 const prisma = new PrismaClient({ adapter });
 
-export async function verifyDatabaseConnection() {
-  await prisma.$queryRawUnsafe("SELECT 1");
+async function listUsers() {
+  try {
+    const users = await prisma.user.findMany({
+      select: { email: true, role: true, firstName: true },
+      take: 10,
+    });
+    console.log("Users in DB:", users);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
-export default prisma;
+listUsers();

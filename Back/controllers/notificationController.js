@@ -1,4 +1,10 @@
 import prisma from "../prisma/prismaClient.js";
+import {
+  notifyUsers,
+  getAllStudentUserIds,
+  getAllLecturerUserIds,
+  getAllActiveUserIds,
+} from "../services/notificationService.js";
 
 export const listNotifications = async (req, res) => {
   try {
@@ -93,6 +99,7 @@ export const registerDeviceToken = async (req, res) => {
     });
 
     res.json(deviceToken);
+    console.log(`[Push] Token registered for user ${req.user.id} (${platform || "unknown"})`);
   } catch (err) {
     console.error("[notifications] registerDeviceToken", err);
     res.status(500).json({ message: "Failed to register device token." });
@@ -121,5 +128,77 @@ export const removeDeviceToken = async (req, res) => {
   } catch (err) {
     console.error("[notifications] removeDeviceToken", err);
     res.status(500).json({ message: "Failed to remove device token." });
+  }
+};
+
+/**
+ * Send a notification to a specific user or role group.
+ * POST /notifications/send  (Admin/Lecturer only)
+ * body: { type, title, body, userId?, targetRole?, entityType?, entityId? }
+ *
+ * targetRole options: "STUDENT" | "LECTURER" | "ADMIN" | "ALL"
+ */
+export const sendNotification = async (req, res) => {
+  try {
+    const {
+      type = "ANNOUNCEMENT",
+      title,
+      body,
+      userId,
+      targetRole,
+      entityType,
+      entityId,
+    } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ message: "title is required" });
+    }
+
+    const validTypes = ["ASSIGNMENT", "ANNOUNCEMENT", "GRADE", "NEWS", "ENROLLMENT", "CLASS_ASSIGNMENT"];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ message: `type must be one of: ${validTypes.join(", ")}` });
+    }
+
+    let userIds = [];
+
+    if (userId) {
+      // Target a specific user
+      userIds = [Number(userId)];
+    } else if (targetRole) {
+      switch (targetRole.toUpperCase()) {
+        case "STUDENT":
+          userIds = await getAllStudentUserIds();
+          break;
+        case "LECTURER":
+          userIds = await getAllLecturerUserIds();
+          break;
+        case "ADMIN": {
+          const admins = await prisma.user.findMany({
+            where: { role: "ADMIN", isActive: true },
+            select: { id: true },
+          });
+          userIds = admins.map((u) => u.id);
+          break;
+        }
+        case "ALL":
+          userIds = await getAllActiveUserIds(["GUEST"]);
+          break;
+        default:
+          return res.status(400).json({ message: "Invalid targetRole. Use STUDENT, LECTURER, ADMIN, or ALL." });
+      }
+    } else {
+      return res.status(400).json({ message: "Provide either userId or targetRole." });
+    }
+
+    if (!userIds.length) {
+      return res.json({ ok: true, sent: 0, message: "No eligible recipients found." });
+    }
+
+    await notifyUsers(userIds, { type, title, body, entityType, entityId });
+
+    res.json({ ok: true, sent: userIds.length });
+  } catch (err) {
+    console.error("[notifications] sendNotification", err);
+    res.status(500).json({ message: "Failed to send notification." });
   }
 };

@@ -17,6 +17,7 @@ import { darkTheme, lightTheme } from "../../Styles/theme";
 import useScreenPerformance from "../../Hooks/useScreenPerformance";
 import { clearAuth } from "../../services/authStorage";
 import { setApiToken } from "../../services/api";
+import { unregisterPushTokensFromBackend } from "../../services/pushRegistration";
 
 export default function Settings() {
   useScreenPerformance("Settings Screen");
@@ -28,6 +29,7 @@ export default function Settings() {
   const theme = mode === "dark" ? darkTheme : lightTheme;
 
   const handleLogout = async () => {
+    await unregisterPushTokensFromBackend().catch(() => {});
     await clearAuth();
     setApiToken(null);
     dispatch(clearUser());

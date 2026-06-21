@@ -1,9 +1,9 @@
 import prisma from "../prisma/prismaClient.js";
-import { sendPushToUsers } from "./fcmService.js";
+import { sendPushToUsers } from "./pushService.js";
 
 /**
  * Create notifications for a list of user IDs (deduplicated).
- * Also sends FCM push notifications to registered devices.
+ * Also sends Expo push notifications to registered devices.
  */
 export async function notifyUsers(userIds, { type, title, body, entityType, entityId }) {
   const uniqueIds = [...new Set(userIds.filter(Boolean))];
@@ -20,7 +20,7 @@ export async function notifyUsers(userIds, { type, title, body, entityType, enti
     })),
   });
 
-  // Also send FCM push (fire-and-forget)
+  // Also send push via Firebase (FCM) and/or Expo (fire-and-forget)
   sendPushToUsers(uniqueIds, {
     title,
     body: body || "",
@@ -29,7 +29,7 @@ export async function notifyUsers(userIds, { type, title, body, entityType, enti
       entityType: entityType || "",
       entityId: entityId != null ? String(entityId) : "",
     },
-  }).catch((err) => console.error("[FCM] push failed for notifyUsers", err));
+  }).catch((err) => console.error("[Push] delivery failed for notifyUsers:", err.message));
 
   return result;
 }

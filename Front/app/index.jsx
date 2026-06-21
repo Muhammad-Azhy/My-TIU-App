@@ -8,47 +8,29 @@ import {
   Alert,
 } from "react-native";
 import { Provider, useDispatch, useSelector } from "react-redux";
+import { NavigationContainer } from "@react-navigation/native";
 import { store } from "./Redux/Store/storeConfig";
 import Login from "./Pages/Guests/Login";
 import RootNavigator from "./Navigation/RootNavigator";
 import { readAuth } from "./services/authStorage";
-import { setApiToken, notificationsApi } from "./services/api";
+import { setApiToken } from "./services/api";
 import { setUser } from "./Redux/Slices/User/userSlice";
 import { fetchUserProfile } from "./Redux/Slices/User/userAction";
 import { fetchUnreadCount } from "./Redux/Slices/Notifications/notificationsAction";
 import { darkTheme, lightTheme } from "./Styles/theme";
 import {
-  requestNotificationPermission,
-  getFCMToken,
-  onForegroundMessage,
-  onTokenRefresh,
-  isFirebaseAvailable,
-  getDevicePlatform,
+  addForegroundNotificationListener,
+  addNotificationResponseListener,
+  getInitialNotification,
+  setBadgeCount,
 } from "./services/notificationSetup";
+import { registerPushTokensWithBackend } from "./services/pushRegistration";
 
-/**
- * Register FCM token with the backend after login.
- */
 async function registerPushToken() {
-  if (!isFirebaseAvailable()) return;
-
-  const granted = await requestNotificationPermission();
-  if (!granted) {
-    if (__DEV__) console.log("[Push] Notification permission denied");
-    return;
-  }
-
-  const fcmToken = await getFCMToken();
-  if (fcmToken) {
-    try {
-      await notificationsApi.registerToken({
-        token: fcmToken,
-        platform: getDevicePlatform(),
-      });
-      if (__DEV__) console.log("[Push] Token registered with backend");
-    } catch (err) {
-      if (__DEV__) console.warn("[Push] Token registration failed:", err?.message);
-    }
+  try {
+    await registerPushTokensWithBackend();
+  } catch (err) {
+    if (__DEV__) console.warn("[Push] Token registration failed:", err?.message);
   }
 }
 
@@ -56,9 +38,11 @@ const MainApp = () => {
   const dispatch = useDispatch();
   const userRole = useSelector((state) => state.user.role);
   const mode = useSelector((state) => state.theme.mode);
+  const unreadCount = useSelector((s) => s.notifications.unreadCount);
   const [authReady, setAuthReady] = useState(false);
   const screenOpacity = useRef(new Animated.Value(0)).current;
 
+  // ── Bootstrap: restore session from storage ──────────────────────────────
   useEffect(() => {
     const bootstrapAuth = async () => {
       try {
@@ -91,47 +75,67 @@ const MainApp = () => {
     bootstrapAuth();
   }, [dispatch]);
 
-  // Set up push notifications when authenticated
+  // ── Push notifications setup when authenticated ───────────────────────────
   useEffect(() => {
     if (!userRole || userRole === "guest") return;
 
-    // Register push token
+    // Register Expo push token with backend
     registerPushToken();
 
-    // Listen for token refresh
-    const unsubTokenRefresh = onTokenRefresh(async (newToken) => {
-      if (newToken) {
-        try {
-          await notificationsApi.registerToken({
-            token: newToken,
-            platform: getDevicePlatform(),
-          });
-        } catch (err) {
-          if (__DEV__) console.warn("[Push] Token refresh registration failed:", err?.message);
+    // Handle initial notification (app opened from terminated state by tapping a notification)
+    getInitialNotification()
+      .then((response) => {
+        if (response) {
+          if (__DEV__) {
+            console.log(
+              "[Push] App opened via notification:",
+              response.notification?.request?.content?.title,
+            );
+          }
+          // Refresh unread count — navigation handled by Notifications screen
+          dispatch(fetchUnreadCount());
         }
-      }
-    });
+      })
+      .catch(() => {});
 
-    // Listen for foreground messages
-    const unsubForeground = onForegroundMessage((remoteMessage) => {
+    // Foreground: show in-app alert and refresh badge
+    const foregroundSub = addForegroundNotificationListener((notification) => {
       if (__DEV__) {
-        console.log("[Push] Foreground message:", remoteMessage?.notification?.title);
+        console.log(
+          "[Push] Foreground notification:",
+          notification?.request?.content?.title,
+        );
       }
-      // Refresh unread count when a push arrives
       dispatch(fetchUnreadCount());
 
-      // Show an in-app alert for foreground messages
-      const title = remoteMessage?.notification?.title || "Notification";
-      const body = remoteMessage?.notification?.body || "";
+      const title = notification?.request?.content?.title || "Notification";
+      const body = notification?.request?.content?.body || "";
       Alert.alert(title, body);
     });
 
+    // Background / Terminated tap: update badge count
+    const responseSub = addNotificationResponseListener((response) => {
+      if (__DEV__) {
+        console.log(
+          "[Push] Notification tapped:",
+          response?.notification?.request?.content?.title,
+        );
+      }
+      dispatch(fetchUnreadCount());
+    });
+
     return () => {
-      if (typeof unsubTokenRefresh === "function") unsubTokenRefresh();
-      if (typeof unsubForeground === "function") unsubForeground();
+      foregroundSub?.remove?.();
+      responseSub?.remove?.();
     };
   }, [userRole, dispatch]);
 
+  // ── Sync badge count with Redux unread count ──────────────────────────────
+  useEffect(() => {
+    setBadgeCount(unreadCount ?? 0).catch(() => {});
+  }, [unreadCount]);
+
+  // ── Fade-in animation after auth check ───────────────────────────────────
   useEffect(() => {
     if (!authReady) return;
     Animated.timing(screenOpacity, {
@@ -165,7 +169,9 @@ const MainApp = () => {
   return (
     <Animated.View style={{ flex: 1, opacity: screenOpacity }}>
       <SafeAreaView style={{ flex: 1, backgroundColor }}>
-        <RootNavigator />
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
       </SafeAreaView>
     </Animated.View>
   );

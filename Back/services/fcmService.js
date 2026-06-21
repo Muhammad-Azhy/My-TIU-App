@@ -1,106 +1,121 @@
 import admin from "firebase-admin";
 import prisma from "../prisma/prismaClient.js";
 
-let firebaseInitialized = false;
+let initialized = false;
 
 /**
- * Initialize Firebase Admin SDK.
- * Looks for GOOGLE_APPLICATION_CREDENTIALS env var or a service-account.json
- * in the project root. If neither exists, FCM push is disabled gracefully.
+ * Initialize Firebase Admin from env vars.
+ * Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY in Back/.env
  */
-export function initializeFirebase() {
-  if (firebaseInitialized) return;
+export function initFirebase() {
+  if (initialized) return true;
 
-  try {
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-      });
-      firebaseInitialized = true;
-      console.log("[FCM] Firebase Admin initialized via GOOGLE_APPLICATION_CREDENTIALS");
-    } else {
-      console.warn(
-        "[FCM] Firebase not configured. Set GOOGLE_APPLICATION_CREDENTIALS in .env " +
-        "to enable push notifications. In-app notifications still work."
-      );
-    }
-  } catch (err) {
-    console.warn("[FCM] Firebase initialization failed:", err.message);
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+  if (!projectId || !clientEmail || !privateKey) {
+    return false;
   }
+
+  admin.initializeApp({
+    credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+  });
+  initialized = true;
+  return true;
+}
+
+export function isFirebaseConfigured() {
+  return initFirebase();
 }
 
 /**
- * Send a push notification to specific FCM tokens.
- * @param {string[]} tokens - FCM device tokens
- * @param {{ title: string, body?: string, data?: object }} payload
+ * Native FCM/APNs device tokens (not Expo push tokens).
  */
-export async function sendPushToTokens(tokens, { title, body, data }) {
-  if (!firebaseInitialized || !tokens.length) return;
+export function isFcmToken(token) {
+  return (
+    typeof token === "string" &&
+    token.length > 20 &&
+    !token.startsWith("ExponentPushToken[") &&
+    !token.startsWith("ExpoPushToken[")
+  );
+}
 
-  const message = {
+/**
+ * Send push notifications via Firebase Cloud Messaging.
+ * Works when the app is closed or in the background (OS-delivered alerts).
+ */
+export async function sendFcmToTokens(tokens, { title, body, data }) {
+  if (!initFirebase()) return { sent: 0, failed: 0 };
+
+  const validTokens = tokens.filter(isFcmToken);
+  if (!validTokens.length) return { sent: 0, failed: 0 };
+
+  const payload = {
     notification: { title, body: body || "" },
-    data: data ? Object.fromEntries(
-      Object.entries(data).map(([k, v]) => [k, String(v)])
-    ) : undefined,
+    data: Object.fromEntries(
+      Object.entries(data || {}).map(([k, v]) => [k, String(v ?? "")]),
+    ),
+    android: {
+      priority: "high",
+      notification: {
+        channelId: "default",
+        sound: "default",
+      },
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+          badge: 1,
+        },
+      },
+    },
   };
 
-  try {
-    const response = await admin.messaging().sendEachForMulticast({
-      tokens,
-      ...message,
-    });
+  let sent = 0;
+  let failed = 0;
+  const invalidTokens = [];
 
-    // Clean up invalid tokens
-    if (response.responses) {
-      const invalidTokens = [];
-      response.responses.forEach((resp, idx) => {
-        if (
-          !resp.success &&
-          resp.error &&
-          (resp.error.code === "messaging/registration-token-not-registered" ||
-           resp.error.code === "messaging/invalid-registration-token")
-        ) {
-          invalidTokens.push(tokens[idx]);
-        }
+  // FCM limits multicast to 500 tokens; batch in chunks of 100 for safety.
+  for (let i = 0; i < validTokens.length; i += 100) {
+    const chunk = validTokens.slice(i, i + 100);
+    try {
+      const response = await admin.messaging().sendEachForMulticast({
+        tokens: chunk,
+        ...payload,
       });
 
-      if (invalidTokens.length) {
-        await prisma.deviceToken.deleteMany({
-          where: { token: { in: invalidTokens } },
-        }).catch((e) => console.error("[FCM] cleanup failed", e));
-      }
-    }
+      sent += response.successCount;
+      failed += response.failureCount;
 
-    if (__DEV_LOG__) {
-      console.log(`[FCM] Sent to ${response.successCount}/${tokens.length} devices`);
+      response.responses.forEach((result, idx) => {
+        if (result.success) return;
+        const code = result.error?.code;
+        if (
+          code === "messaging/registration-token-not-registered" ||
+          code === "messaging/invalid-registration-token"
+        ) {
+          invalidTokens.push(chunk[idx]);
+        } else {
+          console.warn("[FCM] send error:", code, result.error?.message);
+        }
+      });
+    } catch (err) {
+      console.error("[FCM] sendEachForMulticast failed:", err.message);
+      failed += chunk.length;
     }
-  } catch (err) {
-    console.error("[FCM] sendPushToTokens failed:", err.message);
   }
-}
 
-// Simple flag for verbose logging in development
-const __DEV_LOG__ = process.env.NODE_ENV !== "production";
-
-/**
- * Send push notification to all registered devices of specific users.
- * @param {number[]} userIds
- * @param {{ title: string, body?: string, data?: object }} payload
- */
-export async function sendPushToUsers(userIds, payload) {
-  if (!firebaseInitialized || !userIds.length) return;
-
-  try {
-    const deviceTokens = await prisma.deviceToken.findMany({
-      where: { userId: { in: userIds } },
-      select: { token: true },
-    });
-
-    const tokens = deviceTokens.map((dt) => dt.token).filter(Boolean);
-    if (tokens.length) {
-      await sendPushToTokens(tokens, payload);
-    }
-  } catch (err) {
-    console.error("[FCM] sendPushToUsers failed:", err.message);
+  if (invalidTokens.length) {
+    await prisma.deviceToken
+      .deleteMany({ where: { token: { in: invalidTokens } } })
+      .catch((e) => console.error("[FCM] token cleanup failed:", e.message));
   }
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`[FCM] Sent ${sent}/${validTokens.length} (${failed} failed)`);
+  }
+
+  return { sent, failed };
 }

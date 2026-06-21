@@ -126,6 +126,11 @@ export const notificationsApi = {
   registerToken: (payload) => api.post("/notifications/device-token", payload),
   removeToken: (token) =>
     api.delete("/notifications/device-token", { data: { token } }),
+  /**
+   * Send a notification to a user or role group (Admin/Lecturer).
+   * @param {{ type, title, body, userId?, targetRole?, entityType?, entityId? }} payload
+   */
+  send: (payload) => api.post("/notifications/send", payload),
 };
 
 export default api;

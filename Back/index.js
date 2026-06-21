@@ -13,10 +13,10 @@ import lecturerRoutes from "./routes/lecturerRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import prisma, { verifyDatabaseConnection } from "./prisma/prismaClient.js";
-import { initializeFirebase } from "./services/fcmService.js";
 
-// Initialize Firebase Admin for push notifications (graceful if not configured)
-initializeFirebase();
+import { initFirebase } from "./services/fcmService.js";
+
+// Push: Firebase FCM when configured, otherwise Expo Push API (see pushService.js).
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,6 +99,14 @@ function logLanAddresses() {
 app.listen(PORT, HOST, async () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
   console.log(`API health: http://localhost:${PORT}/api/health`);
+  if (initFirebase()) {
+    console.log("[MyTIU] Firebase Cloud Messaging enabled");
+  } else {
+    console.log(
+      "[MyTIU] Firebase not configured — push uses Expo Push API only. " +
+        "Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY in .env",
+    );
+  }
   logLanAddresses();
 
   try {
