@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { fetchUserProfile } from "./userAction.js";
 
 const initialState = {
   data: null,
@@ -45,6 +46,23 @@ const userSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchUserProfile.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchUserProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload) {
+          // Merge enriched profile into existing data (preserves token)
+          state.data = action.payload;
+        }
+      })
+      .addCase(fetchUserProfile.rejected, (state) => {
+        state.loading = false;
+        // Don't overwrite data on profile refresh failure
+      });
   },
 });
 

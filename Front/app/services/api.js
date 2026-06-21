@@ -89,6 +89,8 @@ export const adminApi = {
   createNews: (payload) => api.post("/admin/news", payload),
   updateNews: (id, payload) => api.patch(`/admin/news/${id}`, payload),
   deleteNews: (id) => api.delete(`/admin/news/${id}`),
+  viewStats: (contentType, contentId) =>
+    api.get(`/admin/view-stats/${contentType}/${contentId}`),
 };
 
 export const lecturerApi = {
@@ -104,6 +106,8 @@ export const lecturerApi = {
     api.post("/lecturer/announcements", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  viewStats: (contentType, contentId) =>
+    api.get(`/lecturer/view-stats/${contentType}/${contentId}`),
 };
 
 export const studentApi = {
@@ -111,6 +115,17 @@ export const studentApi = {
   assignments: () => api.get(`/student/assignments?_t=${Date.now()}`),
   grades: () => api.get("/student/grades"),
   profile: () => api.get("/student/profile"),
+  recordView: (payload) => api.post("/student/views", payload),
+};
+
+export const notificationsApi = {
+  list: () => api.get("/notifications"),
+  unreadCount: () => api.get("/notifications/unread-count"),
+  markRead: (id) => api.patch(`/notifications/${id}/read`),
+  markAllRead: () => api.patch("/notifications/read-all"),
+  registerToken: (payload) => api.post("/notifications/device-token", payload),
+  removeToken: (token) =>
+    api.delete("/notifications/device-token", { data: { token } }),
 };
 
 export default api;

@@ -17,22 +17,46 @@ export function toDashboardUser(userData) {
     userData.name ||
     `${userData.firstName || ""} ${userData.lastName || ""}`.trim() ||
     "User";
+
+  // For students: show studentNumber as ID; for lecturers: show employeeId
+  const displayId = (() => {
+    if (userData.student?.studentNumber) return userData.student.studentNumber;
+    if (userData.lecturer?.employeeId) return userData.lecturer.employeeId;
+    return String(userData.id ?? "--");
+  })();
+
+  // Grade maps to yearLevel (e.g. year 1, 2, 3, 4)
+  const grade = (() => {
+    if (userData.grade != null) return String(userData.grade);
+    if (userData.student?.yearLevel != null) return String(userData.student.yearLevel);
+    return "--";
+  })();
+
+  // Semester comes from the new currentSemester field on Student
+  const semester = (() => {
+    if (userData.semester != null) return String(userData.semester);
+    if (userData.student?.currentSemester != null) return String(userData.student.currentSemester);
+    return "--";
+  })();
+
+  // GPA comes from the new gpa field on Student
+  const gpa = (() => {
+    if (userData.gpa != null) return String(userData.gpa);
+    if (userData.student?.gpa != null) return String(userData.student.gpa);
+    return "--";
+  })();
+
   return {
-    id: String(userData.id ?? userData.student?.id ?? userData.lecturer?.id ?? "--"),
+    id: displayId,
     name,
-    grade:
-      userData.grade != null
-        ? String(userData.grade)
-        : userData.student?.yearLevel != null
-          ? String(userData.student.yearLevel)
-          : "--",
-    semester: userData.semester != null ? String(userData.semester) : "--",
-    gpa: userData.gpa != null ? String(userData.gpa) : "--",
+    grade,
+    semester,
+    gpa,
     department:
       userData.department ||
       userData.student?.department?.name ||
       userData.lecturer?.department?.name ||
       "—",
-    position: userData.position || userData.lecturerRank || "—",
+    position: userData.position || userData.lecturer?.rank || userData.lecturerRank || "—",
   };
 }

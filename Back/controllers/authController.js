@@ -19,6 +19,12 @@ const mapUser = (user) => ({
         id: user.student.id,
         studentNumber: user.student.studentNumber,
         yearLevel: user.student.yearLevel,
+        gpa: user.student.gpa != null ? Number(user.student.gpa) : null,
+        currentSemester: user.student.currentSemester || null,
+        departmentId: user.student.departmentId || null,
+        department: user.student.department
+          ? { id: user.student.department.id, name: user.student.department.name }
+          : null,
       }
     : null,
   lecturer: user.lecturer
@@ -26,6 +32,10 @@ const mapUser = (user) => ({
         id: user.lecturer.id,
         employeeId: user.lecturer.employeeId,
         rank: user.lecturer.rank,
+        departmentId: user.lecturer.departmentId || null,
+        department: user.lecturer.department
+          ? { id: user.lecturer.department.id, name: user.lecturer.department.name }
+          : null,
       }
     : null,
 });
@@ -85,7 +95,10 @@ export const register = async (req, res) => {
             }
           : undefined,
     },
-    include: { student: true, lecturer: true },
+    include: {
+      student: { include: { department: true } },
+      lecturer: { include: { department: true } },
+    },
   });
 
   const token = signToken(created.id);
@@ -110,7 +123,10 @@ export const login = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { student: true, lecturer: true },
+      include: {
+        student: { include: { department: true } },
+        lecturer: { include: { department: true } },
+      },
     });
 
     if (!user) {
@@ -126,11 +142,17 @@ export const login = async (req, res) => {
     return res.json({ token, user: mapUser(user) });
   } catch (err) {
     console.error("[auth] login", err);
+    const errText = `${err?.cause?.message || ""} ${err?.message || ""}`;
+    const isDbUnavailable =
+      err?.code === "ECONNREFUSED" ||
+      err?.cause?.code === 45028 ||
+      /pool timeout|connect ETIMEDOUT|ECONNREFUSED|Access denied|ER_ACCESS_DENIED/i.test(
+        errText,
+      );
     return res.status(500).json({
-      message:
-        err?.message?.includes("connect") || err?.code === "ECONNREFUSED"
-          ? "Database unavailable. Check DB_HOST / DB_NAME and that MariaDB is running."
-          : "Login failed. Please try again later.",
+      message: isDbUnavailable
+        ? "Database unavailable. Check DB_HOST / DB_NAME and that MariaDB is running."
+        : "Login failed. Please try again later.",
     });
   }
 };

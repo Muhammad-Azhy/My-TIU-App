@@ -1,5 +1,12 @@
 import bcrypt from "bcryptjs";
 import prisma from "../prisma/prismaClient.js";
+import {
+  notifyStudentUser,
+  notifyLecturerUser,
+  notifyDepartmentStudents,
+  getAllActiveUserIds,
+  notifyUsers,
+} from "../services/notificationService.js";
 
 export const listUsers = async (_req, res) => {
   const users = await prisma.user.findMany({
@@ -79,7 +86,18 @@ export const assignStudentToClass = async (req, res) => {
     },
     create: { studentId: Number(studentId), classId: Number(classId) },
     update: {},
+    include: { classOffering: { include: { course: true } } },
   });
+
+  const courseLabel = enrollment.classOffering?.course?.title || "a new class";
+  await notifyStudentUser(studentId, {
+    type: "ENROLLMENT",
+    title: "Enrolled in a class",
+    body: `You were enrolled in ${courseLabel}.`,
+    entityType: "enrollment",
+    entityId: enrollment.id,
+  }).catch((err) => console.error("[notifications] admin enrollment", err));
+
   res.status(201).json(enrollment);
 };
 
@@ -88,7 +106,18 @@ export const assignLecturerToCourse = async (req, res) => {
   const updated = await prisma.classOffering.update({
     where: { id: Number(classId) },
     data: { lecturerId: Number(lecturerId) },
+    include: { course: true },
   });
+
+  const courseLabel = updated.course?.title || "a class";
+  await notifyLecturerUser(lecturerId, {
+    type: "CLASS_ASSIGNMENT",
+    title: "Assigned to teach a class",
+    body: `You were assigned to ${courseLabel}.`,
+    entityType: "class",
+    entityId: updated.id,
+  }).catch((err) => console.error("[notifications] class assignment", err));
+
   res.json(updated);
 };
 
@@ -137,6 +166,25 @@ export const createNews = async (req, res) => {
       authorId: req.user.id,
     },
   });
+
+  const notifyPayload = {
+    type: "NEWS",
+    title: "News published",
+    body: title,
+    entityType: "news",
+    entityId: created.id,
+  };
+  if (departmentId) {
+    await notifyDepartmentStudents(departmentId, notifyPayload).catch((err) =>
+      console.error("[notifications] news dept", err),
+    );
+  } else {
+    const userIds = await getAllActiveUserIds();
+    await notifyUsers(userIds, notifyPayload).catch((err) =>
+      console.error("[notifications] news all", err),
+    );
+  }
+
   res.status(201).json(created);
 };
 
